@@ -27,14 +27,17 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     ctrlbarwidget.cpp \
     titlebarwidget.cpp \
-    playlistwidget.cpp
+    playlistwidget.cpp \
+    displaywidget.cpp
 
 HEADERS  += mainwindow.h \
     ctrlbarwidget.h \
     titlebarwidget.h \
-    playlistwidget.h
+    playlistwidget.h \
+    displaywidget.h
 
 FORMS    += mainwindow.ui \
     ctrlbarwidget.ui \
     titlebarwidget.ui \
-    playlistwidget.ui
+    playlistwidget.ui \
+    displaywidget.ui

@@ -23,7 +23,7 @@
       <height>420</height>
      </rect>
     </property>
-    <widget class="QWidget" name="showWidget" native="true">
+    <widget class="DisplayWidget" name="showWidget" native="true">
      <property name="geometry">
       <rect>
        <x>0</x>
@@ -32,19 +32,6 @@
        <height>360</height>
       </rect>
      </property>
-     <widget class="QLabel" name="label_2">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>70</y>
-        <width>72</width>
-        <height>15</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>播放界面</string>
-      </property>
-     </widget>
     </widget>
     <widget class="CtrlBarWidget" name="ctrlBarWidget" native="true">
      <property name="geometry">
@@ -114,6 +101,12 @@
    <class>PlayListWidget</class>
    <extends>QWidget</extends>
    <header location="global">playlistwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DisplayWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">displaywidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
