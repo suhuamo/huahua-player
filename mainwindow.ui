@@ -93,21 +93,7 @@
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
-   <widget class="QWidget" name="playListContents">
-    <widget class="QLabel" name="label_3">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>170</y>
-       <width>72</width>
-       <height>15</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>播放列表</string>
-     </property>
-    </widget>
-   </widget>
+   <widget class="PlayListWidget" name="playListContents"/>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
@@ -122,6 +108,12 @@
    <class>TitleBarWidget</class>
    <extends>QWidget</extends>
    <header location="global">titlebarwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PlayListWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">playlistwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
