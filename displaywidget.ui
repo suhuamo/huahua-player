@@ -13,19 +13,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>290</x>
-     <y>160</y>
-     <width>90</width>
-     <height>15</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>显示视频画面</string>
-   </property>
-  </widget>
+  <layout class="QGridLayout" name="gridLayout"/>
  </widget>
  <resources/>
  <connections/>

@@ -13,87 +13,129 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="menuButton">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>113</width>
-     <height>50</height>
-    </rect>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="spacing">
+    <number>0</number>
    </property>
-   <property name="text">
-    <string>Flower-player</string>
+   <property name="leftMargin">
+    <number>0</number>
    </property>
-  </widget>
-  <widget class="QLabel" name="movieFileNamelabel">
-   <property name="geometry">
-    <rect>
-     <x>119</x>
-     <y>0</y>
-     <width>531</width>
-     <height>50</height>
-    </rect>
+   <property name="topMargin">
+    <number>0</number>
    </property>
-   <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;File-Name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   <property name="rightMargin">
+    <number>0</number>
    </property>
-   <property name="textFormat">
-    <enum>Qt::AutoText</enum>
+   <property name="bottomMargin">
+    <number>0</number>
    </property>
-  </widget>
-  <widget class="QPushButton" name="maxButton">
-   <property name="geometry">
-    <rect>
-     <x>720</x>
-     <y>0</y>
-     <width>60</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>按钮</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="minButton">
-   <property name="geometry">
-    <rect>
-     <x>660</x>
-     <y>0</y>
-     <width>60</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>按钮</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="fullButton">
-   <property name="geometry">
-    <rect>
-     <x>780</x>
-     <y>0</y>
-     <width>60</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>按钮</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="closeButton">
-   <property name="geometry">
-    <rect>
-     <x>840</x>
-     <y>0</y>
-     <width>60</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>按钮</string>
-   </property>
-  </widget>
+   <item>
+    <widget class="QPushButton" name="menuButton">
+     <property name="minimumSize">
+      <size>
+       <width>160</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>160</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Flower-player</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="movieFileNamelabel">
+     <property name="minimumSize">
+      <size>
+       <width>400</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>400</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;File-Name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::AutoText</enum>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QPushButton" name="minButton">
+     <property name="maximumSize">
+      <size>
+       <width>60</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="maxButton">
+     <property name="maximumSize">
+      <size>
+       <width>60</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="fullButton">
+     <property name="maximumSize">
+      <size>
+       <width>60</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="closeButton">
+     <property name="maximumSize">
+      <size>
+       <width>60</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

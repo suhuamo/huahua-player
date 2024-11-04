@@ -14,36 +14,57 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QWidget" name="showBarwidget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>70</y>
-      <width>700</width>
-      <height>420</height>
-     </rect>
+   <layout class="QGridLayout" name="gridLayout">
+    <property name="leftMargin">
+     <number>0</number>
     </property>
-    <widget class="DisplayWidget" name="showWidget" native="true">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>700</width>
-       <height>360</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="CtrlBarWidget" name="ctrlBarWidget" native="true">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>360</y>
-       <width>700</width>
-       <height>60</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QWidget" name="showBarwidget" native="true">
+      <layout class="QGridLayout" name="gridLayout_2">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <widget class="DisplayWidget" name="showWidget" native="true"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="CtrlBarWidget" name="ctrlBarWidget" native="true">
+         <property name="maximumSize">
+          <size>
+           <width>700</width>
+           <height>80</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -54,33 +75,45 @@
      <height>30</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu123">
-    <property name="title">
-     <string>123</string>
-    </property>
-   </widget>
-   <addaction name="menu123"/>
-  </widget>
-  <widget class="QToolBar" name="mainToolBar">
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="titleDockWidget">
+   <property name="minimumSize">
+    <size>
+     <width>100</width>
+     <height>60</height>
+    </size>
+   </property>
    <attribute name="dockWidgetArea">
     <number>4</number>
    </attribute>
-   <widget class="TitleBarWidget" name="titleContents"/>
+   <widget class="TitleBarWidget" name="titleContents">
+    <property name="minimumSize">
+     <size>
+      <width>100</width>
+      <height>60</height>
+     </size>
+    </property>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="playListDockWidget">
+   <property name="minimumSize">
+    <size>
+     <width>200</width>
+     <height>600</height>
+    </size>
+   </property>
    <attribute name="dockWidgetArea">
-    <number>4</number>
+    <number>2</number>
    </attribute>
-   <widget class="PlayListWidget" name="playListContents"/>
+   <widget class="PlayListWidget" name="playListContents">
+    <property name="minimumSize">
+     <size>
+      <width>100</width>
+      <height>400</height>
+     </size>
+    </property>
+   </widget>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>

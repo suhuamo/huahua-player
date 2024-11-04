@@ -41,3 +41,6 @@ FORMS    += mainwindow.ui \
     titlebarwidget.ui \
     playlistwidget.ui \
     displaywidget.ui
+
+RESOURCES += \
+    icon.qrc
