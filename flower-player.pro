@@ -42,5 +42,19 @@ FORMS    += mainwindow.ui \
     playlistwidget.ui \
     displaywidget.ui
 
+INCLUDEPATH += $$PWD/libffmpeg/include
+LIBS += $$PWD/libffmpeg/lib/x64/avformat.lib   \
+        $$PWD/libffmpeg/lib/x64/avcodec.lib    \
+        $$PWD/libffmpeg/lib/x64/avdevice.lib   \
+        $$PWD/libffmpeg/lib/x64/avfilter.lib   \
+        $$PWD/libffmpeg/lib/x64/avutil.lib     \
+        $$PWD/libffmpeg/lib/x64/postproc.lib   \
+        $$PWD/libffmpeg/lib/x64/swresample.lib \
+        $$PWD/libffmpeg/lib/x64/swscale.lib
+INCLUDEPATH += $$PWD/SDL2/include
+LIBS += $$PWD/SDL2/lib/x86/SDL2.lib
+
+
+
 RESOURCES += \
     icon.qrc
