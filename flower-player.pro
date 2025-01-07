@@ -52,7 +52,7 @@ LIBS += $$PWD/libffmpeg/lib/x64/avformat.lib   \
         $$PWD/libffmpeg/lib/x64/swresample.lib \
         $$PWD/libffmpeg/lib/x64/swscale.lib
 INCLUDEPATH += $$PWD/SDL2/include
-LIBS += $$PWD/SDL2/lib/x86/SDL2.lib
+LIBS += $$PWD/SDL2/lib/x64/SDL2.lib
 
 
 
