@@ -27,6 +27,7 @@ SOURCES += main.cpp\
     ffplay.cpp \
         mainwindow.cpp \
     ctrlbarwidget.cpp \
+    state.cpp \
     titlebarwidget.cpp \
     playlistwidget.cpp \
     displaywidget.cpp
@@ -34,6 +35,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     ctrlbarwidget.h \
     ffplay.h \
+    state.h \
     titlebarwidget.h \
     playlistwidget.h \
     displaywidget.h

@@ -16,13 +16,16 @@ class DisplayWidget : public QWidget
 public:
     explicit DisplayWidget(QWidget *parent = 0);
     ~DisplayWidget();
-    void showImage(const QImage &image);
-    QImage *image = new QImage();
+
+public slots:
+    // 设置当前帧的图片
+    void setImage(QImage &image);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-     QPixmap pixmap_video;
+    QPixmap pixmap_video;
     Ui::DisplayWidget *ui;
 };
 

@@ -15,8 +15,9 @@ DisplayWidget::~DisplayWidget()
     delete ui;
 }
 
-void DisplayWidget::showImage(const QImage &image)
+void DisplayWidget::setImage(QImage &image)
 {
+    // 更新画布的图片
     pixmap_video = QPixmap::fromImage(image);
     // 调用paintEvent重绘页面
     update();

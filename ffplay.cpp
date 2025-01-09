@@ -1,4 +1,22 @@
 #include "ffplay.h"
+#include"state.h"
+#include <thread>
+#include<QThread>
+
+#include<QDebug>
+#define cout qDebug()
+#ifdef __cplusplus
+extern "C"
+{
+// 包含ffmpeg头文件
+#include "libavformat/avformat.h"
+#include "libavutil/avutil.h"
+#include "libavcodec/avcodec.h"
+#include "libswscale/swscale.h"
+#include "libavutil/imgutils.h"
+#include "SDL.h"
+}
+#endif
 
 FFPlay *FFPlay::GetInstance()
 {
@@ -11,16 +29,17 @@ FFPlay::FFPlay(QObject *parent)
     : QObject{parent}
 {}
 
-int thread_work(void *arg);
 
-void FFPlay::start_work(MainWindow &mainWindow)
+void FFPlay::start_work()
 {
-    SDL_CreateThread(thread_work,"thread_work", &mainWindow);
+    qRegisterMetaType<QImage>("QImage&");//注册新类型
+    //事件循环
+    m_tPlayLoopThread = std::thread(&FFPlay::thread_work, this);
+
 }
 // 开启线程播放媒体
-int thread_work(void *arg)
+void FFPlay::thread_work()
 {
-    MainWindow *w = (MainWindow*)arg;
     const char *in_file_url = "1.mp4";
     cout << "in_file:";
     cout << in_file_url;
@@ -64,6 +83,12 @@ int thread_work(void *arg)
     // 获取所有帧数据
     while(1)
     {
+        // 暂停中不需要播放
+        if(State::play_state == 0)
+        {
+            SDL_Delay(10);
+            continue;
+        }
         // 读取包数据
         ret = av_read_frame(in_fmt_ctx, pkt);
         // 数据读取结束
@@ -97,10 +122,12 @@ int thread_work(void *arg)
                   codec_ctx->height,
                   pFrameRGB32->data,
                   pFrameRGB32->linesize);
+        // 发送图片给界面显示
         QImage image((uchar*)pFrameRGB32->data[0], codec_ctx->width, codec_ctx->height, QImage::Format_RGB32);
-        w->setImage(image);
+        emit putImage(image);
+        // 等待23ms一帧
         SDL_Delay(23);
+        // 释放buffer资源
         av_packet_unref(pkt);
     }
-    return 0;
 }

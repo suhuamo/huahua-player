@@ -2,21 +2,9 @@
 #define FFPLAY_H
 
 #include <QObject>
-#include<QDebug>
-#define cout qDebug()
-#ifdef __cplusplus
-extern "C"
-{
-// 包含ffmpeg头文件
-#include "libavformat/avformat.h"
-#include "libavutil/avutil.h"
-#include "libavcodec/avcodec.h"
-#include "libswscale/swscale.h"
-#include "libavutil/imgutils.h"
-#include "SDL.h"
-}
-#endif
-#include"mainwindow.h"
+#include<QImage>
+#include<QThread>
+#include<thread>
 
 // 媒体播放类，用于操控播放视频和音频
 class FFPlay : public QObject
@@ -25,11 +13,16 @@ class FFPlay : public QObject
 public:
     // 单例模式
     static FFPlay *GetInstance();
-    // explicit FFPlay(QObject *parent = nullptr);
     // 开始媒体播放
-    void start_work(MainWindow &mainWindow);
+    void start_work();
+    // 线程工作
+    void thread_work();
+signals:
+    // 发送图片给画面显示
+    void putImage(QImage &image);
 private:
     explicit FFPlay(QObject *parent = nullptr);
+    std::thread m_tPlayLoopThread;
 
 signals:
 };
