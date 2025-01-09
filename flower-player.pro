@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp\
+    ffplay.cpp \
         mainwindow.cpp \
     ctrlbarwidget.cpp \
     titlebarwidget.cpp \
@@ -32,6 +33,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     ctrlbarwidget.h \
+    ffplay.h \
     titlebarwidget.h \
     playlistwidget.h \
     displaywidget.h
