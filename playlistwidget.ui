@@ -33,12 +33,12 @@
     <widget class="QListWidget" name="listWidget">
      <item>
       <property name="text">
-       <string>周杰伦——双截棍</string>
+       <string>野子——B站UP主</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>林俊杰——美人鱼</string>
+       <string>就让这大雨落下鸡汤——B站UP主</string>
       </property>
      </item>
     </widget>

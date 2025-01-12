@@ -2,8 +2,6 @@
 #define DISPLAYWIDGET_H
 
 #include <QWidget>
-#include<QDebug>
-#define cout qDebug()
 
 namespace Ui {
 class DisplayWidget;

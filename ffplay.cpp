@@ -18,6 +18,16 @@ extern "C"
 }
 #endif
 
+
+FFPlay::FFPlay(QObject *parent)
+    : QObject{parent}
+{
+    //注册新类型
+    qRegisterMetaType<QImage>("QImage&");
+    // 默认是运行状态
+    abort_ = false;
+}
+
 FFPlay *FFPlay::GetInstance()
 {
     static FFPlay *ffPlay = new FFPlay();
@@ -25,23 +35,10 @@ FFPlay *FFPlay::GetInstance()
     return ffPlay;
 }
 
-FFPlay::FFPlay(QObject *parent)
-    : QObject{parent}
-{
-    //注册新类型
-    qRegisterMetaType<QImage>("QImage&");
-}
-
-
-void FFPlay::start_work()
-{
-    //事件循环
-    m_tPlayLoopThread = std::thread(&FFPlay::thread_work, this);
-}
 // 开启线程播放媒体
 void FFPlay::thread_work()
 {
-    const char *in_file_url = "1.mp4";
+    const char *in_file_url = file_url;
     cout << "in_file:";
     cout << in_file_url;
     int ret = 0;
@@ -92,6 +89,11 @@ void FFPlay::thread_work()
     // 获取所有帧数据
     while(1)
     {
+        if(abort_)
+        {
+            cout << "当前现场介绍";
+            return;
+        }
         // 暂停中不需要播放
         if(State::play_state == 0)
         {
@@ -144,4 +146,30 @@ void FFPlay::thread_work()
         // 释放buffer资源
         av_packet_unref(pkt);
     }
+    cout << "当前现场介绍";
+}
+
+void FFPlay::getPlayUrl(const QModelIndex &index)
+
+{
+    cout << "click:" << index.row();
+    // 通知当前播放结束
+    abort_ = true;
+    // 等待当前播放的视频线程销毁
+    if(playLoopThread.joinable())
+    {
+        playLoopThread.join();
+    }
+    // 更新输入的文件
+    if(index.row() == 0)
+    {
+        file_url = "1.mp4";
+    }else
+    {
+        file_url = "2.mp4";
+    }
+    // 通知新的播放开始
+    abort_ = false;
+    // 开始播放新选择的文件
+    playLoopThread = std::thread(&FFPlay::thread_work, this);
 }
