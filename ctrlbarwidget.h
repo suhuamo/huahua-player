@@ -16,8 +16,12 @@ public:
     ~CtrlBarWidget();
 
 
-private slots:
+public slots:
     void on_playOrPauseButton_clicked();
+    void setPlaySliderValue(int value);
+    void setPlaySliderMaximum(int value);
+    void setPlayTimeEdit(const QTime& time);
+    void setTotalTimeEdit(const QTime& time);
 
 private:
     Ui::CtrlBarWidget *ui;

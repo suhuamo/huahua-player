@@ -20,6 +20,10 @@ public:
 signals:
     // 发送图片给画面显示
     void putImage(QImage &image);
+    void setPlaySliderValue(int value);
+    void setPlaySliderMaximum(int value);
+    void setPlayTimeEdit(const QTime& time);
+    void setTotalTimeEdit(const QTime& time);
 private:
     explicit FFPlay(QObject *parent = nullptr);
     std::thread m_tPlayLoopThread;

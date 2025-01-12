@@ -2,7 +2,7 @@
 #include"state.h"
 #include <thread>
 #include<QThread>
-
+#include <QtWidgets/QTimeEdit>
 #include<QDebug>
 #define cout qDebug()
 #ifdef __cplusplus
@@ -27,15 +27,16 @@ FFPlay *FFPlay::GetInstance()
 
 FFPlay::FFPlay(QObject *parent)
     : QObject{parent}
-{}
+{
+    //注册新类型
+    qRegisterMetaType<QImage>("QImage&");
+}
 
 
 void FFPlay::start_work()
 {
-    qRegisterMetaType<QImage>("QImage&");//注册新类型
     //事件循环
     m_tPlayLoopThread = std::thread(&FFPlay::thread_work, this);
-
 }
 // 开启线程播放媒体
 void FFPlay::thread_work()
@@ -56,6 +57,14 @@ void FFPlay::thread_work()
     int video_idx = av_find_best_stream(in_fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     int audio_idx = av_find_best_stream(in_fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
     cout << "video:" << video_idx << " audio:" << audio_idx;
+    // 视频时间
+    int64_t time_second = in_fmt_ctx->duration / AV_TIME_BASE;
+    int total_hour = time_second / 3600;
+    int total_minute = time_second % 3600 / 60;
+    int total_second = time_second % 60;
+    // 设置进度条栏
+    emit setPlaySliderMaximum(time_second);
+    emit setTotalTimeEdit(QTime(total_hour, total_minute, total_second));
     // 解码器上下文
     AVCodecContext *codec_ctx = avcodec_alloc_context3(NULL);
     // 加载视频流中的参数到解码器上下文中
@@ -111,6 +120,11 @@ void FFPlay::thread_work()
         {
             continue;
         }
+        // codec_ctx->time_base 是编码时候的时间基， av_q2d(codec_ctx->time_base) 是 pts 转换为毫秒的单位， / 1000 转换为秒
+        int64_t now_second = frame->pts * av_q2d(codec_ctx->time_base) / 1000;
+        // 进度条走动
+        emit setPlaySliderValue(now_second);
+        emit setPlayTimeEdit(QTime(now_second / 3600, now_second % 3600 / 60, now_second % 60));
         /*
                  * sws_scale 用于将图像从一个像素格式转换为另一个像素格式。
                  * 可以在同一个函数里实现：1.图像色彩空间转换， 2:分辨率缩放，3:前后图像滤波处理

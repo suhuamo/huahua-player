@@ -13,6 +13,14 @@ CtrlBarWidget::CtrlBarWidget(QWidget *parent) :
     // 设置停止图标
     QIcon stop_icon(":/ctrl/icon/stop.png");
     ui->stopButton->setIcon(stop_icon);
+
+    // 进度条初始数据
+    ui->playSlider->setValue(0);
+    ui->playSlider->setMinimum(0);
+    ui->playSlider->setSingleStep(1);
+    // 设置界面不允许操作
+    ui->playTimeEdit->setEnabled(false);
+    ui->totalTimeEdit->setEnabled(false);
 }
 
 CtrlBarWidget::~CtrlBarWidget()
@@ -38,5 +46,26 @@ void CtrlBarWidget::on_playOrPauseButton_clicked()
     }
     //修改播放状态
     State::play_state = ~State::play_state;
+}
+
+void CtrlBarWidget::setPlaySliderValue(int value)
+{
+    ui->playSlider->setValue(value);
+}
+
+void CtrlBarWidget::setPlaySliderMaximum(int value)
+{
+    ui->playSlider->setMaximum(value);
+}
+
+void CtrlBarWidget::setPlayTimeEdit(const QTime &time)
+{
+    ui->playTimeEdit->setTime(time);
+}
+
+void CtrlBarWidget::setTotalTimeEdit(const QTime &time)
+{
+    QTime time1(0, 0, 12);
+    ui->totalTimeEdit->setTime(time);
 }
 
