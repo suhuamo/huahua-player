@@ -1,8 +1,6 @@
 #include "displaywidget.h"
 #include "ui_displaywidget.h"
 
-#include <QPainter>
-
 DisplayWidget::DisplayWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::DisplayWidget)
@@ -25,18 +23,18 @@ void DisplayWidget::setImage(QImage &image)
 
 void DisplayWidget::paintEvent(QPaintEvent *event)
 {
-
+    // 如果现在有画布内容了
     if(!pixmap_video.isNull())
     {
-
+        // 创建画笔对象
         QPainter painter(this);
-        // 防止画布在同一时刻被两个地方操作
+        // 加锁防止画布在同一时刻被两个地方操作
         // m_mutex.lock();
         QPixmap pixmap = pixmap_video.scaled(this->size(), Qt::KeepAspectRatio);
         // m_mutex.unlock();
         int x = (this->width() - pixmap.width()) / 2;
         int y = (this->height() - pixmap.height()) / 2;
-        // 修改画布内容为当前 pixmap_video【即图片】
+        // 修改画布内容为当前 pixmap_video【即解析出来的帧图片】
         painter.drawPixmap(x, y, pixmap);
     }
     // 重绘页面

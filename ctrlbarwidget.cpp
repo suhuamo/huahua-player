@@ -1,6 +1,5 @@
 #include "ctrlbarwidget.h"
 #include "ui_ctrlbarwidget.h"
-#include"state.h"
 
 CtrlBarWidget::CtrlBarWidget(QWidget *parent) :
     QWidget(parent),
@@ -65,7 +64,6 @@ void CtrlBarWidget::setPlayTimeEdit(const QTime &time)
 
 void CtrlBarWidget::setTotalTimeEdit(const QTime &time)
 {
-    QTime time1(0, 0, 12);
     ui->totalTimeEdit->setTime(time);
 }
 

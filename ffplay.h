@@ -6,6 +6,26 @@
 #include<QThread>
 #include<thread>
 #include<QListWidget>
+#include"state.h"
+#include <thread>
+#include<QThread>
+#include <QtWidgets/QTimeEdit>
+
+#include<QDebug>
+#define cout qDebug()
+
+#ifdef __cplusplus
+extern "C"
+{
+// 包含ffmpeg头文件
+#include "libavformat/avformat.h"
+#include "libavutil/avutil.h"
+#include "libavcodec/avcodec.h"
+#include "libswscale/swscale.h"
+#include "libavutil/imgutils.h"
+#include "SDL.h"
+}
+#endif
 
 // 媒体播放类，用于操控播放视频和音频
 class FFPlay : public QObject

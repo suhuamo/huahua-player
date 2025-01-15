@@ -1,28 +1,9 @@
 #include "ffplay.h"
-#include"state.h"
-#include <thread>
-#include<QThread>
-#include <QtWidgets/QTimeEdit>
-#include<QDebug>
-#define cout qDebug()
-#ifdef __cplusplus
-extern "C"
-{
-// 包含ffmpeg头文件
-#include "libavformat/avformat.h"
-#include "libavutil/avutil.h"
-#include "libavcodec/avcodec.h"
-#include "libswscale/swscale.h"
-#include "libavutil/imgutils.h"
-#include "SDL.h"
-}
-#endif
-
 
 FFPlay::FFPlay(QObject *parent)
     : QObject{parent}
 {
-    //注册新类型
+    //注册新类型，因为子线程和主线程传递数据的时候如果没有注册是无法传输的
     qRegisterMetaType<QImage>("QImage&");
     // 默认是运行状态
     abort_ = false;
@@ -39,8 +20,7 @@ FFPlay *FFPlay::GetInstance()
 void FFPlay::thread_work()
 {
     const char *in_file_url = file_url;
-    cout << "in_file:";
-    cout << in_file_url;
+    cout << "in_file: " << in_file_url;
     int ret = 0;
     // 创建封装上下文对象
     AVFormatContext *in_fmt_ctx = avformat_alloc_context();
@@ -91,8 +71,7 @@ void FFPlay::thread_work()
     {
         if(abort_)
         {
-            cout << "当前现场介绍";
-            return;
+            goto end_;
         }
         // 暂停中不需要播放
         if(State::play_state == 0)
@@ -146,13 +125,13 @@ void FFPlay::thread_work()
         // 释放buffer资源
         av_packet_unref(pkt);
     }
-    cout << "当前现场介绍";
+end_:
+    cout << "当前播放结束";
 }
 
 void FFPlay::getPlayUrl(const QModelIndex &index)
 
 {
-    cout << "click:" << index.row();
     // 通知当前播放结束
     abort_ = true;
     // 等待当前播放的视频线程销毁

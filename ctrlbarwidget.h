@@ -2,6 +2,7 @@
 #define CTRLBARWIDGET_H
 
 #include <QWidget>
+#include"state.h"
 
 namespace Ui {
 class CtrlBarWidget;

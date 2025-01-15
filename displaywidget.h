@@ -2,6 +2,7 @@
 #define DISPLAYWIDGET_H
 
 #include <QWidget>
+#include <QPainter>
 
 namespace Ui {
 class DisplayWidget;
