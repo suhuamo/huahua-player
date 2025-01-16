@@ -17,10 +17,10 @@ FFPlay *FFPlay::GetInstance()
 }
 
 // 开启线程播放媒体
-void FFPlay::thread_work()
+void FFPlay::thread_work(QString file_url)
 {
-    const char *in_file_url = file_url;
-    cout << "in_file: " << in_file_url;
+    // 获取输入的文件
+    const char *in_file_url = file_url.toStdString().c_str();
     int ret = 0;
     // 创建封装上下文对象
     AVFormatContext *in_fmt_ctx = avformat_alloc_context();
@@ -33,7 +33,6 @@ void FFPlay::thread_work()
     // 查找视频流、音频流的序号
     int video_idx = av_find_best_stream(in_fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     int audio_idx = av_find_best_stream(in_fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, NULL, 0);
-    cout << "video:" << video_idx << " audio:" << audio_idx;
     // 视频时间
     int64_t time_second = in_fmt_ctx->duration / AV_TIME_BASE;
     int total_hour = time_second / 3600;
@@ -126,12 +125,12 @@ void FFPlay::thread_work()
         av_packet_unref(pkt);
     }
 end_:
-    cout << "当前播放结束";
+    cout << "当前视频播放结束：" << file_url;
 }
 
 void FFPlay::getPlayUrl(const QModelIndex &index)
-
 {
+    m_mutex.lock();
     // 通知当前播放结束
     abort_ = true;
     // 等待当前播放的视频线程销毁
@@ -139,16 +138,11 @@ void FFPlay::getPlayUrl(const QModelIndex &index)
     {
         playLoopThread.join();
     }
-    // 更新输入的文件
-    if(index.row() == 0)
-    {
-        file_url = "1.mp4";
-    }else
-    {
-        file_url = "2.mp4";
-    }
+    // 设置新的播放文件为当前选择的条目中的文件  [index.data(Qt::UserRole): 获取用户自己填充到条目中的数据]
+    file_url = index.data(Qt::UserRole).value<QString>().toStdString().data();
     // 通知新的播放开始
     abort_ = false;
     // 开始播放新选择的文件
-    playLoopThread = std::thread(&FFPlay::thread_work, this);
+    playLoopThread = std::thread(&FFPlay::thread_work, this, index.data(Qt::UserRole).value<QString>());
+    m_mutex.unlock();
 }

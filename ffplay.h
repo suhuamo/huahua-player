@@ -10,6 +10,8 @@
 #include <thread>
 #include<QThread>
 #include <QtWidgets/QTimeEdit>
+#include"qvariant.h"
+#include <QMutex>
 
 #include<QDebug>
 #define cout qDebug()
@@ -35,7 +37,7 @@ public:
     // 单例模式
     static FFPlay *GetInstance();
     // 线程工作
-    void thread_work();
+    void thread_work(QString in_file_url);
 public slots:
     void getPlayUrl(const QModelIndex &index);
 signals:
@@ -53,6 +55,8 @@ private:
     const char* file_url;
     // 中止状态
     bool abort_ = false;
+
+    QMutex m_mutex;
 
 signals:
 };

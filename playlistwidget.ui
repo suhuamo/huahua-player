@@ -35,10 +35,16 @@
       <property name="text">
        <string>野子——B站UP主</string>
       </property>
+      <property name="toolTip">
+       <string>默认视频</string>
+      </property>
      </item>
      <item>
       <property name="text">
-       <string>就让这大雨落下鸡汤——B站UP主</string>
+       <string>鸡汤文学——B站UP主</string>
+      </property>
+      <property name="toolTip">
+       <string>默认视频</string>
       </property>
      </item>
     </widget>

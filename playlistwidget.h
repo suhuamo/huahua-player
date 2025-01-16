@@ -3,9 +3,11 @@
 
 #include <QWidget>
 #include<QListWidget>
-#include<QMenu>
-#include<QAction>
+#include <QMenu>
+#include <QAction>
+#include <QMessageBox>
 #include <QMouseEvent>
+#include <QFileDialog>
 
 #include<QDebug>
 #define cout qDebug()
@@ -24,15 +26,18 @@ public:
     explicit PlayListWidget(QWidget *parent = 0);
     QListWidget *getListWidget();
     ~PlayListWidget();
-    virtual void mousePressEvent(QMouseEvent* event);
+
+protected:
+    // 鼠标按下事件
+    virtual void contextMenuEvent(QContextMenuEvent *event) override;
+
+private slots:
+    void onActionAddTriggered();
+    void onActionRemoveTriggered();
 
 private:
     Ui::PlayListWidget *ui;
-
-    QMenu menu;
-    QAction actAdd;
-    QAction actRemove;
-    QAction actClearList;
+    QMenu *contextMenu;
 };
 
 #endif // PLAYLISTWIDGET_H
