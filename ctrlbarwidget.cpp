@@ -12,19 +12,27 @@ CtrlBarWidget::CtrlBarWidget(QWidget *parent) :
     // 设置停止图标
     QIcon stop_icon(":/ctrl/icon/stop.png");
     ui->stopButton->setIcon(stop_icon);
-
-    // 进度条初始数据
-    ui->playSlider->setValue(0);
-    ui->playSlider->setMinimum(0);
-    ui->playSlider->setSingleStep(1);
     // 设置界面不允许操作
     ui->playTimeEdit->setEnabled(false);
     ui->totalTimeEdit->setEnabled(false);
+    // 初始化页面数据
+    initOrClear();
 }
 
 CtrlBarWidget::~CtrlBarWidget()
 {
     delete ui;
+}
+
+void CtrlBarWidget::initOrClear()
+{
+    // 进度条初始数据
+    ui->playSlider->setValue(0);
+    ui->playSlider->setMinimum(0);
+    ui->playSlider->setSingleStep(1);
+    // 初始化时间戳
+    ui->playTimeEdit->setTime(QTime(0,0,0));
+    ui->totalTimeEdit->setTime(QTime(0,0,0));
 }
 
 void CtrlBarWidget::on_playOrPauseButton_clicked()

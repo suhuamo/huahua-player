@@ -19,6 +19,8 @@ public:
 
 
 public slots:
+    // 初始化页面或者清理页面数据
+    void initOrClear();
     void on_playOrPauseButton_clicked();
     void setPlaySliderValue(int value);
     void setPlaySliderMaximum(int value);

@@ -45,11 +45,13 @@ public slots:
     void updatePlayUrl(const QModelIndex &index);
 signals:
     // 发送图片给画面显示
-    void putImage(QImage &image);
+    void setImage(QImage &image);
     void setPlaySliderValue(int value);
     void setPlaySliderMaximum(int value);
     void setPlayTimeEdit(const QTime& time);
     void setTotalTimeEdit(const QTime& time);
+    // 清空页面数据
+    void clear();
 private:
     explicit FFPlay(QObject *parent = nullptr);
     // 播放循环线程

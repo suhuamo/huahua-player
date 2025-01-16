@@ -118,7 +118,7 @@ void FFPlay::thread_work(QString file_url)
                   pFrameRGB32->linesize);
         // 发送图片给界面显示
         QImage image((uchar*)pFrameRGB32->data[0], codec_ctx->width, codec_ctx->height, QImage::Format_RGB32);
-        emit putImage(image);
+        emit setImage(image);
         // 等待23ms一帧
         SDL_Delay(23);
         // 释放buffer资源
@@ -138,6 +138,8 @@ void FFPlay::stop_play()
     {
         playLoopThread.join();
     }
+    // 清空页面数据
+    emit clear();
     m_mutex.unlock();
 }
 

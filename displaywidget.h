@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QPainter>
+#include <QMutex>
 
 namespace Ui {
 class DisplayWidget;
@@ -19,13 +20,18 @@ public:
 public slots:
     // 设置当前帧的图片
     void setImage(QImage &image);
+    // 清理画面
+    void clear();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
+    // 图片对象
     QPixmap pixmap_video;
     Ui::DisplayWidget *ui;
+    // 锁
+    QMutex m_mutex;
 };
 
 #endif // DISPLAYWIDGET_H
