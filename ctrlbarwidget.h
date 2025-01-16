@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include"state.h"
+#include"ffplay.h"
 
 namespace Ui {
 class CtrlBarWidget;
@@ -23,6 +24,9 @@ public slots:
     void setPlaySliderMaximum(int value);
     void setPlayTimeEdit(const QTime& time);
     void setTotalTimeEdit(const QTime& time);
+
+private slots:
+    void on_stopButton_clicked();
 
 private:
     Ui::CtrlBarWidget *ui;

@@ -67,3 +67,15 @@ void CtrlBarWidget::setTotalTimeEdit(const QTime &time)
     ui->totalTimeEdit->setTime(time);
 }
 
+
+void CtrlBarWidget::on_stopButton_clicked()
+{
+    // 设置播放图标
+    QIcon play_icon(":/ctrl/icon/play.png");
+    ui->playOrPauseButton->setIcon(play_icon);
+    // 修改播放状态为暂停中
+    State::play_state = 0;
+    // 结束本次播放
+    FFPlay::GetInstance()->stop_play();
+}
+

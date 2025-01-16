@@ -38,8 +38,11 @@ public:
     static FFPlay *GetInstance();
     // 线程工作
     void thread_work(QString in_file_url);
+    // 停止播放
+    void stop_play();
 public slots:
-    void getPlayUrl(const QModelIndex &index);
+    // 更新播放的文件
+    void updatePlayUrl(const QModelIndex &index);
 signals:
     // 发送图片给画面显示
     void putImage(QImage &image);
@@ -55,7 +58,7 @@ private:
     const char* file_url;
     // 中止状态
     bool abort_ = false;
-
+    // 锁
     QMutex m_mutex;
 
 signals:

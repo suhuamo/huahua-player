@@ -128,7 +128,20 @@ end_:
     cout << "当前视频播放结束：" << file_url;
 }
 
-void FFPlay::getPlayUrl(const QModelIndex &index)
+void FFPlay::stop_play()
+{
+    m_mutex.lock();
+    // 通知当前播放结束
+    abort_ = true;
+    // 等待当前播放的视频线程销毁
+    if(playLoopThread.joinable())
+    {
+        playLoopThread.join();
+    }
+    m_mutex.unlock();
+}
+
+void FFPlay::updatePlayUrl(const QModelIndex &index)
 {
     m_mutex.lock();
     // 通知当前播放结束
