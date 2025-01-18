@@ -51,6 +51,7 @@ void CtrlBarWidget::on_playOrPauseButton_clicked()
         QIcon play_icon(":/ctrl/icon/play.png");
         ui->playOrPauseButton->setIcon(play_icon);
     }
+    // todo：不要放在这里操控吧，使用信号槽来操控，
     //修改播放状态
     State::play_state = ~State::play_state;
 }
