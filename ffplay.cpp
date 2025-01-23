@@ -275,6 +275,10 @@ void FFPlay::thread_work(QString file_url)
     }
 end_:
     cout << "当前视频播放结束：" << file_url;
+    // 关闭音频
+    SDL_CloseAudio();
+    // 关闭SDL
+    SDL_Quit();
 }
 
 void FFPlay::stop_play()
