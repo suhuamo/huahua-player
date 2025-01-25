@@ -8,6 +8,8 @@ public:
     State();
     // 播放状态，0代表暂停中，1代表正在播放
     static int play_state;
+    // 声音状态，0代表静音中，1代表正常声音
+    static int voice_state;
 };
 
 #endif // STATE_H

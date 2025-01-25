@@ -30,6 +30,8 @@ public slots:
 private slots:
     void on_stopButton_clicked();
 
+    void on_volumeButton_clicked();
+
 private:
     Ui::CtrlBarWidget *ui;
 };

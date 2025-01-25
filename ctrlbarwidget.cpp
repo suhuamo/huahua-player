@@ -6,12 +6,23 @@ CtrlBarWidget::CtrlBarWidget(QWidget *parent) :
     ui(new Ui::CtrlBarWidget)
 {
     ui->setupUi(this);
+    /*
+     * 播放按钮的图标显示逻辑是：按钮点击了之后会变成对应的状态
+     * 声音按钮的图标显示逻辑是：按钮就是目前声音的状态
+     */
     // 设置播放图标
     QIcon play_icon(":/ctrl/icon/play.png");
     ui->playOrPauseButton->setIcon(play_icon);
     // 设置停止图标
     QIcon stop_icon(":/ctrl/icon/stop.png");
     ui->stopButton->setIcon(stop_icon);
+    // 设置有声音图标
+    QIcon voice_icon(":/ctrl/icon/voice.png");
+    ui->volumeButton->setIcon(voice_icon);
+    // 设置音量播放的最大值、最小值、初始值
+    ui->volumeSlider->setMaximum(SDL_MIX_MAXVOLUME);
+    ui->volumeSlider->setMinimum(0);
+    ui->volumeSlider->setValue(SDL_MIX_MAXVOLUME / 2);
     // 设置界面不允许操作
     ui->playTimeEdit->setEnabled(false);
     ui->totalTimeEdit->setEnabled(false);
@@ -53,7 +64,7 @@ void CtrlBarWidget::on_playOrPauseButton_clicked()
     }
     // todo：不要放在这里操控吧，使用信号槽来操控，
     //修改播放状态
-    State::play_state = ~State::play_state;
+    State::play_state = !State::play_state;
 }
 
 void CtrlBarWidget::setPlaySliderValue(int value)
@@ -86,5 +97,22 @@ void CtrlBarWidget::on_stopButton_clicked()
     State::play_state = 0;
     // 结束本次播放
     FFPlay::GetInstance()->stop_play();
+}
+
+
+void CtrlBarWidget::on_volumeButton_clicked()
+{
+    // 如果现在没有声音，那么点击后就应该变成有声音
+    if(State::voice_state == 0) {
+        // 设置有声音图标
+        QIcon voice_icon(":/ctrl/icon/voice.png");
+        ui->volumeButton->setIcon(voice_icon);
+    } else {
+        // 设置静音图标
+        QIcon mute_icon(":/ctrl/icon/mute.png");
+        ui->volumeButton->setIcon(mute_icon);
+    }
+    // 0-1转换
+    State::voice_state = !State::voice_state;
 }
 
