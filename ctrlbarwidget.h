@@ -31,9 +31,13 @@ private slots:
     void on_stopButton_clicked();
 
     void on_volumeButton_clicked();
+    // 改变声音大小
+    void changeVolumeValue(int value);
 
 private:
     Ui::CtrlBarWidget *ui;
+    // 禁音之前的音量
+    int volume_value_mute_before = 0;
 };
 
 #endif // CTRLBARWIDGET_H

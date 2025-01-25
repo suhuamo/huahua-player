@@ -36,7 +36,7 @@ void fill_audio_pcm(void *udata, Uint8 *stream, int len) {
     // 【如果audio_len_g - len 还是大于了len字节，那么继续取len填充即可】
     len = len > audio_len_g ? audio_len_g : len;
     //填充PCM数据到SDL中
-    SDL_MixAudio(stream, audio_pcm_g, len, SDL_MIX_MAXVOLUME/2);// SDL_MIX_MAXVOLUME/2 为音频大小，在0-128之间调整
+    SDL_MixAudio(stream, audio_pcm_g, len, State::volume_value);// SDL_MIX_MAXVOLUME/2 为音频大小，在0-128之间调整
     // 更新pcm内存指针指向位置，已经【又】使用了len个字节空间，那么下次需要从当前位置+len的位置开始使用
     audio_pcm_g += len;
     // 更新剩余字节大小数量，已经读取了len个字节大小的数据，那么下次还剩 audio_len_g - len 个字节大小的数据可以使用

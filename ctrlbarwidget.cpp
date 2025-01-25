@@ -6,6 +6,8 @@ CtrlBarWidget::CtrlBarWidget(QWidget *parent) :
     ui(new Ui::CtrlBarWidget)
 {
     ui->setupUi(this);
+    // 设置槽函数
+    connect(this->ui->volumeSlider, SIGNAL(valueChanged(int)), this, SLOT(changeVolumeValue(int)));
     /*
      * 播放按钮的图标显示逻辑是：按钮点击了之后会变成对应的状态
      * 声音按钮的图标显示逻辑是：按钮就是目前声音的状态
@@ -107,12 +109,22 @@ void CtrlBarWidget::on_volumeButton_clicked()
         // 设置有声音图标
         QIcon voice_icon(":/ctrl/icon/voice.png");
         ui->volumeButton->setIcon(voice_icon);
+        // 修改音量
+        ui->volumeSlider->setValue(this->volume_value_mute_before);
     } else {
         // 设置静音图标
         QIcon mute_icon(":/ctrl/icon/mute.png");
         ui->volumeButton->setIcon(mute_icon);
+        // 修改音量
+        this->volume_value_mute_before = ui->volumeSlider->value();
+        ui->volumeSlider->setValue(0);
     }
     // 0-1转换
     State::voice_state = !State::voice_state;
+}
+
+void CtrlBarWidget::changeVolumeValue(int value)
+{
+    State::volume_value = value;
 }
 
