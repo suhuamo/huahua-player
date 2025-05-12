@@ -16,7 +16,6 @@
 #include<QDebug>
 #define cout qDebug()
 
-#ifdef __cplusplus
 extern "C"
 {
 // 包含ffmpeg头文件
@@ -28,7 +27,7 @@ extern "C"
 #include"libswresample/swresample.h"
 #include "SDL.h"
 }
-#endif
+
 
 // 媒体播放类，用于操控播放视频和音频
 class FFPlay : public QObject

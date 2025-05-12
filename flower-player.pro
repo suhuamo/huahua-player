@@ -46,19 +46,41 @@ FORMS    += mainwindow.ui \
     playlistwidget.ui \
     displaywidget.ui
 
-INCLUDEPATH += $$PWD/libffmpeg/include
-LIBS += $$PWD/libffmpeg/lib/x64/avformat.lib   \
-        $$PWD/libffmpeg/lib/x64/avcodec.lib    \
-        $$PWD/libffmpeg/lib/x64/avdevice.lib   \
-        $$PWD/libffmpeg/lib/x64/avfilter.lib   \
-        $$PWD/libffmpeg/lib/x64/avutil.lib     \
-        $$PWD/libffmpeg/lib/x64/postproc.lib   \
-        $$PWD/libffmpeg/lib/x64/swresample.lib \
-        $$PWD/libffmpeg/lib/x64/swscale.lib
-INCLUDEPATH += $$PWD/SDL2/include
-LIBS += $$PWD/SDL2/lib/x64/SDL2.lib
 
+win32 {
+    FFMPEG_PATH = D:\\env\\lib2h\\ffmpeg\\4.2.1
+    FFMPEG_LIB_PATH = $$FFMPEG_PATH\\lib\\x86
+    SDL_PATH = D:\\env\\lib2h\\SDL2
+    SDL_LIB_PATH = $$SDL_PATH\\lib\\x86
+}
 
+win64 {
+    FFMPEG_PATH = D:\\env\\lib2h\\ffmpeg\\4.2.1
+    FFMPEG_LIB_PATH = $$FFMPEG_PATH\\lib\\x64
+    SDL_PATH = D:\\env\\lib2h\\SDL2
+    SDL_LIB_PATH = $$SDL_PATH\\lib\\x64
+}
+
+unix {
+    FFMPEG_PATH = /usr/local/ffmpeg/4.2.1
+    FFMPEG_LIB_PATH = $$FFMPEG_PATH
+    SDL_PATH = /usr/local/SDL2
+    SDL_LIB_PATH = $$SDL_PATH
+}
+
+# 通用配置
+INCLUDEPATH += $$FFMPEG_PATH\\include
+LIBS += $$FFMPEG_LIB_PATH\\avformat.lib \
+        $$FFMPEG_LIB_PATH\\avcodec.lib \
+        $$FFMPEG_LIB_PATH\\avdevice.lib \
+        $$FFMPEG_LIB_PATH\\avfilter.lib \
+        $$FFMPEG_LIB_PATH\\avutil.lib \
+        $$FFMPEG_LIB_PATH\\postproc.lib \
+        $$FFMPEG_LIB_PATH\\swresample.lib \
+        $$FFMPEG_LIB_PATH\\swscale.lib
+
+INCLUDEPATH += $$SDL_PATH\\include
+LIBS += $$SDL_LIB_PATH\\SDL2.lib
 
 RESOURCES += \
     icon.qrc
