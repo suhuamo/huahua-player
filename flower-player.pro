@@ -25,10 +25,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp\
         mainwindow.cpp \
+    playlist.cpp \
+    title.cpp
 
 HEADERS  += mainwindow.h \
+    playlist.h \
+    title.h
 
 FORMS    += mainwindow.ui \
+    playlist.ui \
+    title.ui
 
 
 win32 {
@@ -66,4 +72,5 @@ LIBS += $$FFMPEG_LIB_PATH\\avformat.lib \
 INCLUDEPATH += $$SDL_PATH\\include
 LIBS += $$SDL_LIB_PATH\\SDL2.lib
 
-RESOURCES +=
+RESOURCES += \
+    mainwid.qrc

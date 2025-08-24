@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/fa-solid-900.ttf</file>
+        <file>res/fontawesome-webfont.ttf</file>
+        <file>res/menu.json</file>
+        <file>res/Player.ico</file>
+        <file>res/player.png</file>
+    </qresource>
+</RCC>
