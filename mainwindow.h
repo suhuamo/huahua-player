@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include<QListWidget>
-#include"ffplay.h"
 
 
 namespace Ui {

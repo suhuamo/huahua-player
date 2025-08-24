@@ -24,27 +24,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp\
-    ffplay.cpp \
         mainwindow.cpp \
-    ctrlbarwidget.cpp \
-    state.cpp \
-    titlebarwidget.cpp \
-    playlistwidget.cpp \
-    displaywidget.cpp
 
 HEADERS  += mainwindow.h \
-    ctrlbarwidget.h \
-    ffplay.h \
-    state.h \
-    titlebarwidget.h \
-    playlistwidget.h \
-    displaywidget.h
 
 FORMS    += mainwindow.ui \
-    ctrlbarwidget.ui \
-    titlebarwidget.ui \
-    playlistwidget.ui \
-    displaywidget.ui
 
 
 win32 {
@@ -82,5 +66,4 @@ LIBS += $$FFMPEG_LIB_PATH\\avformat.lib \
 INCLUDEPATH += $$SDL_PATH\\include
 LIBS += $$SDL_LIB_PATH\\SDL2.lib
 
-RESOURCES += \
-    icon.qrc
+RESOURCES +=

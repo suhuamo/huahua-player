@@ -1,9 +1,1 @@
-<RCC>
-    <qresource prefix="/ctrl">
-        <file>icon/pause.png</file>
-        <file>icon/play.png</file>
-        <file>icon/stop.png</file>
-        <file>icon/mute.png</file>
-        <file>icon/voice.png</file>
-    </qresource>
-</RCC>
+<RCC/>
