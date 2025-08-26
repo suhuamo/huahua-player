@@ -6,5 +6,6 @@
         <file>res/Player.ico</file>
         <file>res/player.png</file>
         <file>res/qss/mainwid.css</file>
+        <file>res/qss/title.css</file>
     </qresource>
 </RCC>

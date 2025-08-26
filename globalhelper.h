@@ -2,6 +2,7 @@
 #define GLOBALHELPER_H
 
 #include<QString>
+#include<QPushButton>
 
 class GlobalHelper
 {
@@ -12,6 +13,13 @@ public:
      * @return
      */
     static QString GetQssStr(QString strQssPath);
+    /**
+     * @brief 为按钮设置图片（通过第三方字库来设置的）
+     * @param btn
+     * @param iconSize
+     * @param icon
+     */
+    static void SetIcon(QPushButton *btn, int iconSize, QChar icon);
 private:
     GlobalHelper();
 };

@@ -16,10 +16,11 @@ MainWindow::MainWindow(QWidget *parent) :
      */
 //    setWindowFlags(Qt::FramelessWindowHint);
     setWindowFlags(Qt::FramelessWindowHint);
+//    todo：这个类为什么不提取一个 initUi的方法呢，可能是因为本类马上就需要加载页面，故不需要提取方法给别人调用吧？
 //    设置任务栏中显示的图片
-    this->setWindowIcon(QIcon("://res//player.png"));
+    this->setWindowIcon(QIcon(":/res//player.png"));
 //    加载样式
-    setStyleSheet(GlobalHelper::GetQssStr("://res/qss/mainwid.css"));
+    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/mainwid.css"));
 //    开启鼠标跟踪，用于播放时隐藏
     this->setMouseTracking(true);
 
@@ -40,6 +41,10 @@ bool MainWindow::Init()
     QWidget *title_bar_wid = new QWidget(this);
     ui->TitleWid->setTitleBarWidget(title_bar_wid);
     ui->TitleWid->setWidget(&_title);
+
+    if(_title.Init() == false) {
+        return false;
+    }
 
     return true;
 }

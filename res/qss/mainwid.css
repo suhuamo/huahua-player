@@ -6,14 +6,12 @@ QMainWindow#MainWindow{
 
 }
 
-
-
-
 /**********状态栏-即窗口最下方那一栏**********/
 QStatusBar {
 /*    设置背景色为灰色*/
     background: rgb(57, 58, 60);
 }
+
 /*QStatusBar::item {
     border: none;
     border-right: 1px solid rgb(100, 100, 100);

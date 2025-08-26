@@ -14,6 +14,9 @@ class Title : public QWidget
 public:
     explicit Title(QWidget *parent = 0);
     ~Title();
+    bool Init();
+private:
+    bool initUi();
 
 private:
     Ui::Title *ui;
