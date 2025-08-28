@@ -76,3 +76,5 @@ LIBS += $$SDL_LIB_PATH\\SDL2.lib
 
 RESOURCES += \
     res.qrc
+
+DISTFILES +=

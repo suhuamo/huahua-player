@@ -1,4 +1,4 @@
-/* *代表作用于所有组件*/
+/* 作用于所有组件，注意，*的优先级最低，一旦有其他的生效了那么*的样式就无效*/
 *{
 /*背景设置为黑色，移除所有组件的边框，设置前景颜色（如文本颜色）为白色*/
     background-color: #202129;
@@ -26,7 +26,8 @@ QPushButton#CloseBtn:pressed{
     color: red;
 }
 
-/*设置该窗口的字体颜色为灰色*/
+/* 实现 QLabel 的 MovieNameLab 类，即媒体名称这个标签页*/
 QLabel#MovieNameLab {
+/* 文本颜色为灰色*/
     color: #c4c6d2
 }

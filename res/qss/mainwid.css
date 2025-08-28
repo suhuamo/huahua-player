@@ -1,4 +1,4 @@
-/*整个窗口界面*/
+/* 实现 QMainWindow 的 MainWindow 类，即我们项目的整个窗口界面*/
 QMainWindow#MainWindow{
     /*添加边框并设置背景为黑色*/
     border: 1px solid black;

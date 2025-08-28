@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include<QFile>
-#include<QDebug>
 #include"globalhelper.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -42,7 +41,8 @@ bool MainWindow::Init()
     ui->TitleWid->setTitleBarWidget(title_bar_wid);
     ui->TitleWid->setWidget(&_title);
 
-    if(_title.Init() == false) {
+    if(_title.Init() == false ||
+       _playlist.Init() == false) {
         return false;
     }
 

@@ -7,5 +7,6 @@
         <file>res/player.png</file>
         <file>res/qss/mainwid.css</file>
         <file>res/qss/title.css</file>
+        <file>res/qss/playlist.css</file>
     </qresource>
 </RCC>

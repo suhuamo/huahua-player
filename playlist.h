@@ -14,6 +14,9 @@ class Playlist : public QWidget
 public:
     explicit Playlist(QWidget *parent = 0);
     ~Playlist();
+    bool Init();
+private:
+    bool initUi();
 
 private:
     Ui::Playlist *ui;

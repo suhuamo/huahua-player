@@ -3,6 +3,7 @@
 
 #include<QString>
 #include<QPushButton>
+#include<QDebug>
 
 class GlobalHelper
 {
