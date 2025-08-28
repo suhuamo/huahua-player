@@ -7,7 +7,6 @@ Playlist::Playlist(QWidget *parent) :
     ui(new Ui::Playlist)
 {
     ui->setupUi(this);
-//    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/title.css"));
 }
 
 Playlist::~Playlist()
@@ -25,9 +24,9 @@ bool Playlist::Init()
 
 bool Playlist::initUi()
 {
-//    todo：样式没生效，待后面排查
+//    todo：样式没生效，待后面排查【2025-08-28：tmd我真服了，这是playlist，写成了加载title.css样式了，挂不得一直不生效】
 //    加载qss样式
-    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/title.css"));
+    setStyleSheet(GlobalHelper::GetQssStr("://res/qss/playlist.css"));
 
     return true;
 }
