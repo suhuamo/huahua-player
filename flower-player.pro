@@ -27,16 +27,19 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     playlist.cpp \
     title.cpp \
-    globalhelper.cpp
+    globalhelper.cpp \
+    ctrlbar.cpp
 
 HEADERS  += mainwindow.h \
     playlist.h \
     title.h \
-    globalhelper.h
+    globalhelper.h \
+    ctrlbar.h
 
 FORMS    += mainwindow.ui \
     playlist.ui \
-    title.ui
+    title.ui \
+    ctrlbar.ui
 
 
 win32 {

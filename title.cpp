@@ -33,7 +33,7 @@ bool Title::initUi()
 {
 //    清空媒体视频名称
     ui->MovieNameLab->clear();
-    // todo：目前没发现这个有什么用，等发现了再打开。保证窗口不被绘制上的部分透明
+//     todo：目前没发现这个有什么用，等发现了再打开。保证窗口不被绘制上的部分透明
 //    setAttribute(Qt::WA_TranslucentBackground);
 //    设置样式表
     setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/title.css"));

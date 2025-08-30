@@ -41,8 +41,11 @@ bool MainWindow::Init()
     ui->TitleWid->setTitleBarWidget(title_bar_wid);
     ui->TitleWid->setWidget(&_title);
 
+//    todo:怎么设置Title不可上下拖动？
+
     if(_title.Init() == false ||
-       _playlist.Init() == false) {
+       _playlist.Init() == false ||
+            ui->CtrlBarWid->Init() == false) {
         return false;
     }
 
