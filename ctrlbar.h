@@ -17,6 +17,9 @@ public:
     bool Init();
 private:
     bool initUi();
+    void connectSignalSlots();
+signals:
+    void SigPlayListCtlBtnClicked();
 private:
     Ui::CtrlBar *ui;
 };

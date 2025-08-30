@@ -17,6 +17,13 @@ public:
     bool Init();
 private:
     bool initUi();
+    void connectSignalSlots();
+signals:
+    void SigMinBtnClicked();
+    void SigMaxBtnClicked();
+    void SigFullScreenBtnClicked();
+    void SigCloseBtnClicked();
+    void SigMenuBtnClicked();
 
 private:
     Ui::Title *ui;

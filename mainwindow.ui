@@ -49,7 +49,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QWidget" name="ShowWid" native="true">
+        <widget class="Show" name="ShowWid" native="true">
          <property name="minimumSize">
           <size>
            <width>100</width>
@@ -109,6 +109,12 @@
    <class>CtrlBar</class>
    <extends>QWidget</extends>
    <header>ctrlbar.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Show</class>
+   <extends>QWidget</extends>
+   <header>show.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

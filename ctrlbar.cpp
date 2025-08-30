@@ -20,6 +20,8 @@ bool CtrlBar::Init()
         return false;
     }
 
+    connectSignalSlots();
+
     return true;
 }
 
@@ -44,4 +46,9 @@ bool CtrlBar::initUi()
     ui->SettingBtn->setToolTip("设置");
     ui->VolumeBtn->setToolTip("静音");
     return true;
+}
+
+void CtrlBar::connectSignalSlots()
+{
+    connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
 }
