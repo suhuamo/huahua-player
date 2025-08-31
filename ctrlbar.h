@@ -18,10 +18,12 @@ public:
 private:
     bool initUi();
     void connectSignalSlots();
+    void SlotOnPlayOrPauseBtnClicked();
 signals:
     void SigPlayListCtlBtnClicked();
 private:
     Ui::CtrlBar *ui;
+    bool _pause;    //是否处于暂停状态
 };
 
 #endif // CTRLBAR_H

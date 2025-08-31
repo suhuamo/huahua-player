@@ -4,7 +4,8 @@
 
 CtrlBar::CtrlBar(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::CtrlBar)
+    ui(new Ui::CtrlBar),
+    _pause(true)
 {
     ui->setupUi(this);
 }
@@ -38,7 +39,7 @@ bool CtrlBar::initUi()
     GlobalHelper::SetIcon(ui->SettingBtn, 12, QChar(0xf013));
     GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
 //    设置鼠标悬浮提示
-    ui->PlayOrPauseBtn->setToolTip("播放/暂停");
+    ui->PlayOrPauseBtn->setToolTip("点击播放");
     ui->OverPlayBtn->setToolTip("结束播放");
     ui->BackBtn->setToolTip("上一个");
     ui->NextBtn->setToolTip("下一个");
@@ -50,6 +51,25 @@ bool CtrlBar::initUi()
 
 void CtrlBar::connectSignalSlots()
 {
-//    todo：SettingBtn 是调节视频的参数，比如编码格式，编码效率等
+//    todo：SettingBtn 是显示出来调节视频的参数，比如编码格式，编码效率等，等后续再开发
     connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
+    connect(ui->PlayOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnPlayOrPauseBtnClicked);
+}
+
+void CtrlBar::SlotOnPlayOrPauseBtnClicked()
+{
+//    暂停状态下，图标显示为播放按钮
+    if (_pause)
+    {
+//        点击后视频开始播放，此时状态为播放状态，按钮变为暂停按钮，提示为点击暂停
+        GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04c));
+        ui->PlayOrPauseBtn->setToolTip("点击暂停");
+        _pause = false;
+    }
+    else
+    {
+        GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
+        ui->PlayOrPauseBtn->setToolTip("点击播放");
+        _pause = true;
+    }
 }
