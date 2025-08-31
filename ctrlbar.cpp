@@ -54,6 +54,7 @@ void CtrlBar::connectSignalSlots()
 //    todo：SettingBtn 是显示出来调节视频的参数，比如编码格式，编码效率等，等后续再开发
     connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
     connect(ui->PlayOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnPlayOrPauseBtnClicked);
+    connect(ui->VolumeBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnVolumeBtnClicked);
 }
 
 void CtrlBar::SlotOnPlayOrPauseBtnClicked()
@@ -71,5 +72,19 @@ void CtrlBar::SlotOnPlayOrPauseBtnClicked()
         GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
         ui->PlayOrPauseBtn->setToolTip("点击播放");
         _pause = true;
+    }
+}
+
+void CtrlBar::SlotOnVolumeBtnClicked()
+{
+//    todo:如果是拖放进度，变为0和变为非0也要改变图标状态
+//    如果此时是非静音状态
+    if(ui->VolumeBtn->text() == QChar(0xf028)) {
+        _last_volume_percent = ui->VolumeSlider->value();
+        ui->VolumeSlider->setValue(0);
+        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
+    } else {
+        ui->VolumeSlider->setValue(_last_volume_percent);
+        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
     }
 }

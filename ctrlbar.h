@@ -19,11 +19,13 @@ private:
     bool initUi();
     void connectSignalSlots();
     void SlotOnPlayOrPauseBtnClicked();
+    void SlotOnVolumeBtnClicked();
 signals:
     void SigPlayListCtlBtnClicked();
 private:
     Ui::CtrlBar *ui;
     bool _pause;    //是否处于暂停状态
+    double _last_volume_percent;    //变为静音前的音量大小
 };
 
 #endif // CTRLBAR_H
