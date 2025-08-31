@@ -6,6 +6,7 @@
 #include<QKeySequence>
 #include<QDesktopWidget>
 #include<QWindow>
+#include<QShortcut>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -116,19 +117,18 @@ void MainWindow::SlotOnMaxBtnClicked()
 
 void MainWindow::SlotOnFullScreenBtnClicked()
 {
-//    this->setWindowFlags(Qt::Window);
-//    this->showFullScreen();
-    //多屏情况下，在当前屏幕全屏
-//    QScreen *pStCurScreen = qApp->screens().at(qApp->desktop()->screenNumber(this));
-//    ui->ShowWid->windowHandle()->setScreen(pStCurScreen);
-//     ui->ShowWid->setWindowFlags(Qt::Window);
-//    ui->ShowWid->showFullScreen();
-//    ui->ShowWid->windowHandle()->setScreen();
-//    if(ui->ShowWid->isFullScreen()) {
-//        ui->ShowWid->showNormal();
-//    } else {
-//        ui->ShowWid->showFullScreen();
-//    }
+//    如果当前是全屏状态
+    if(ui->ShowWid->isFullScreen()) {
+//        需要先将当前窗口设置为子窗口，才能取消全屏
+        ui->ShowWid->setWindowFlags(Qt::SubWindow);
+        ui->ShowWid->showNormal();
+    } else {
+        //脱离父窗口后才能设置为全屏
+        ui->ShowWid->setWindowFlags(Qt::Window);
+        ui->ShowWid->showFullScreen();
+    }
+//    让当前窗口获取焦点
+    this->setFocus();
 }
 
 void MainWindow::SlotOnCloseBtnClicked()
@@ -158,6 +158,7 @@ void MainWindow::initMenu()
     QMenu* open_menu = _menu.addMenu(tr("打开"));
     QAction* act_open_file = open_menu->addAction(tr("打开文件 \t Ctrl + F"));
     QAction* act_open_stream = open_menu->addAction(tr("打开视频流 \t Ctrl + L"));
+    QAction* act_full_screen = _menu.addAction(tr("全屏/取消全屏 \t F11"));
 //    添加槽函数
     connect(act_about, &QAction::triggered, this, []() {
         qDebug() << "关于 \t Ctrl + A 被触发";
@@ -168,13 +169,23 @@ void MainWindow::initMenu()
     connect(act_open_stream, &QAction::triggered, this, []() {
         qDebug() << "打开视频流 \t Ctrl + L  被触发";
     });
+    connect(act_full_screen, &QAction::triggered, this, [this]() {
+        qDebug() << "全屏/取消全屏 \t F11 被触发";
+        this->SlotOnFullScreenBtnClicked();
+    });
 
     // 添加快捷键(由于QMenu没有焦点，故只能再次添加到当前窗口上)
     act_about->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
     act_open_file->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
     act_open_stream->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));
+    act_full_screen->setShortcut(QKeySequence(Qt::Key_F11));
+    // 设置为应用全局有效
+    act_full_screen->setShortcutContext(Qt::ApplicationShortcut); // 因为全屏的时候焦点是在show的Lable上，不在当前窗口上，那么当前窗口的快捷键就无法生效了
+
+    // 把action添加到当前窗口上
     this->addAction(act_about);
     this->addAction(act_open_file);
     this->addAction(act_open_stream);
+    this->addAction(act_full_screen);
 
 }
