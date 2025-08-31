@@ -29,3 +29,11 @@ QListWidget::item:selected{
     color: black;
     border: 1px solid Cyan;
 }
+
+/*提示*/
+QToolTip {
+/*设置无边框，背景颜色为黑色，字体颜色为白色*/
+    border: none;
+    background-color: #2e2f37;
+    color: white;
+}

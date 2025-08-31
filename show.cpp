@@ -31,6 +31,13 @@ bool Show::initUi()
 {
 //    加载qss
     setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/show.css"));
-    qDebug() <<GlobalHelper::GetQssStr(":/res/qss/show.css");
+
+    ui->label->clear();
+    // 使用QPixmap加载资源系统中的图片
+    ui->label->setPixmap(QPixmap(":/res/player.png"));
+
+    // 可选：设置QLabel允许图片缩放以适应其大小
+     ui->label->setScaledContents(true);
+
     return true;
 }

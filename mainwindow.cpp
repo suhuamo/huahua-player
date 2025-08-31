@@ -4,6 +4,8 @@
 #include"globalhelper.h"
 #include<QAction>
 #include<QKeySequence>
+#include<QDesktopWidget>
+#include<QWindow>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -105,12 +107,28 @@ void MainWindow::SlotOnMinBtnClicked()
 
 void MainWindow::SlotOnMaxBtnClicked()
 {
-
+    if(isMaximized()) {
+        showNormal();
+    } else {
+        showMaximized();
+    }
 }
 
 void MainWindow::SlotOnFullScreenBtnClicked()
 {
-
+//    this->setWindowFlags(Qt::Window);
+//    this->showFullScreen();
+    //多屏情况下，在当前屏幕全屏
+//    QScreen *pStCurScreen = qApp->screens().at(qApp->desktop()->screenNumber(this));
+//    ui->ShowWid->windowHandle()->setScreen(pStCurScreen);
+//     ui->ShowWid->setWindowFlags(Qt::Window);
+//    ui->ShowWid->showFullScreen();
+//    ui->ShowWid->windowHandle()->setScreen();
+//    if(ui->ShowWid->isFullScreen()) {
+//        ui->ShowWid->showNormal();
+//    } else {
+//        ui->ShowWid->showFullScreen();
+//    }
 }
 
 void MainWindow::SlotOnCloseBtnClicked()

@@ -29,14 +29,16 @@ SOURCES += main.cpp\
     title.cpp \
     globalhelper.cpp \
     ctrlbar.cpp \
-    show.cpp
+    show.cpp \
+    medialist.cpp
 
 HEADERS  += mainwindow.h \
     playlist.h \
     title.h \
     globalhelper.h \
     ctrlbar.h \
-    show.h
+    show.h \
+    medialist.h
 
 FORMS    += mainwindow.ui \
     playlist.ui \

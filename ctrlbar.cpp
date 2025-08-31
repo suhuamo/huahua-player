@@ -50,5 +50,6 @@ bool CtrlBar::initUi()
 
 void CtrlBar::connectSignalSlots()
 {
+//    todo：SettingBtn 是调节视频的参数，比如编码格式，编码效率等
     connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
 }

@@ -15,9 +15,11 @@ public:
     explicit Playlist(QWidget *parent = 0);
     ~Playlist();
     bool Init();
+    void SlotOnAddFile(QString filePath);
+
 private:
     bool initUi();
-
+    void connectSignalSlots();
 private:
     Ui::Playlist *ui;
 };

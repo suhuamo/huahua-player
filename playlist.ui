@@ -30,26 +30,42 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QListWidget" name="List">
+    <widget class="MediaList" name="List">
      <item>
       <property name="text">
        <string>testlist0</string>
+      </property>
+      <property name="toolTip">
+       <string comment="testlist01" extracomment="testlist01">testlist0</string>
       </property>
      </item>
      <item>
       <property name="text">
        <string>testlist01</string>
       </property>
+      <property name="toolTip">
+       <string comment="testlist01" extracomment="testlist01">testlist01</string>
+      </property>
      </item>
      <item>
       <property name="text">
        <string>testlist012</string>
+      </property>
+      <property name="toolTip">
+       <string comment="testlist01" extracomment="testlist01">testlist012</string>
       </property>
      </item>
     </widget>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MediaList</class>
+   <extends>QListWidget</extends>
+   <header>medialist.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

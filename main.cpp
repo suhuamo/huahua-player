@@ -17,9 +17,5 @@ int main(int argc, char *argv[])
     }
     w.show();
 
-    Show s;
-    s.Init();
-    s.show();
-
     return a.exec();
 }
