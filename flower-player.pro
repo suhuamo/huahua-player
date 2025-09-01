@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     globalhelper.cpp \
     ctrlbar.cpp \
     show.cpp \
-    medialist.cpp
+    medialist.cpp \
+    customslider.cpp
 
 HEADERS  += mainwindow.h \
     playlist.h \
@@ -38,7 +39,8 @@ HEADERS  += mainwindow.h \
     globalhelper.h \
     ctrlbar.h \
     show.h \
-    medialist.h
+    medialist.h \
+    customslider.h
 
 FORMS    += mainwindow.ui \
     playlist.ui \

@@ -25,4 +25,6 @@ private:
     GlobalHelper();
 };
 
+const int MAX_SLIDER_VALUE = 65536;
+
 #endif // GLOBALHELPER_H
