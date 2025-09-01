@@ -55,6 +55,8 @@ void CtrlBar::connectSignalSlots()
     connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
     connect(ui->PlayOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnPlayOrPauseBtnClicked);
     connect(ui->VolumeBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnVolumeBtnClicked);
+    connect(ui->BackBtn, &QPushButton::clicked, this, &CtrlBar::SigBackBtnClicked);
+    connect(ui->NextBtn, &QPushButton::clicked, this, &CtrlBar::SigNextBtnClicked);
 }
 
 void CtrlBar::SlotOnPlayOrPauseBtnClicked()

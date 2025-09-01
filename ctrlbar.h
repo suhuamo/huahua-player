@@ -22,6 +22,8 @@ private:
     void SlotOnVolumeBtnClicked();
 signals:
     void SigPlayListCtlBtnClicked();
+    void SigBackBtnClicked();
+    void SigNextBtnClicked();
 private:
     Ui::CtrlBar *ui;
     bool _pause;    //是否处于暂停状态

@@ -1,6 +1,7 @@
 #include "title.h"
 #include "ui_title.h"
 #include"globalhelper.h"
+#include<QFileInfo>
 
 Title::Title(QWidget *parent) :
     QWidget(parent),
@@ -23,6 +24,19 @@ bool Title::Init()
     connectSignalSlots();
 
     return true;
+}
+
+void Title::SlotOnPlay(QString filePath)
+{
+    QFileInfo fileInfo(filePath);
+    if(fileInfo.isFile()) {
+        ui->MovieNameLab->setText(fileInfo.fileName());
+//        异常情况，即文件被删除了
+    } else {
+        //    todo:可以加个弹窗提示
+        ui->MovieNameLab->setText("文件不存在");
+    }
+
 }
 
 bool Title::initUi()

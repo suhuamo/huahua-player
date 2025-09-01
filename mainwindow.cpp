@@ -99,6 +99,9 @@ void MainWindow::connectSignalSlots()
     connect(&_title, &Title::SigCloseBtnClicked, this, &MainWindow::SlotOnCloseBtnClicked);
     connect(&_title, &Title::SigMenuBtnClicked, this, &MainWindow::SlotOnMenuBtnClicked);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
+    connect(&_playlist, &Playlist::SigPlay, &_title, &Title::SlotOnPlay);
+    connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &_playlist, &Playlist::SlotOnBackPlay);
+    connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &_playlist, &Playlist::SlotOnNextPlay);
 }
 
 void MainWindow::SlotOnMinBtnClicked()

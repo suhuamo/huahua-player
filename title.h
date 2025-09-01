@@ -15,6 +15,7 @@ public:
     explicit Title(QWidget *parent = 0);
     ~Title();
     bool Init();
+    void SlotOnPlay(QString filePath);
 private:
     bool initUi();
     void connectSignalSlots();
