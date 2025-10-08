@@ -17,6 +17,8 @@ public:
     bool Init();
     void SlotOnPlay(QString filePath);
 private:
+    void paintEvent(QPaintEvent *event);
+    void resizeEvent(QResizeEvent *event);
     bool initUi();
     void connectSignalSlots();
 signals:

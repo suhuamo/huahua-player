@@ -49,7 +49,7 @@ bool MainWindow::Init()
     ui->TitleWid->setTitleBarWidget(title_bar_wid);
     ui->TitleWid->setWidget(&_title);
 
-//    todo:怎么设置Title不可上下拖动？
+//    mark: 通过设置 title.ui 的 maxHeight 可以让 Title 这个 DockWidget 不能被拖动
 
     if(_title.Init() == false ||
        _playlist.Init() == false ||

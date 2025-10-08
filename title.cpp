@@ -15,6 +15,16 @@ Title::~Title()
     delete ui;
 }
 
+void Title::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+}
+
+void Title::resizeEvent(QResizeEvent *event)
+{
+    Q_UNUSED(event);
+}
+
 bool Title::Init()
 {
     if(initUi() == false) {
@@ -31,7 +41,7 @@ void Title::SlotOnPlay(QString filePath)
     QFileInfo fileInfo(filePath);
     if(fileInfo.isFile()) {
         ui->MovieNameLab->setText(fileInfo.fileName());
-//        异常情况，即文件被删除了
+//        todo：加一个异常情况判断，即文件被删除了
     } else {
         //    todo:可以加个弹窗提示
         ui->MovieNameLab->setText("文件不存在");
@@ -58,6 +68,7 @@ bool Title::initUi()
     GlobalHelper::SetIcon(ui->MaxBtn, 9, QChar(0xf2d0));
     GlobalHelper::SetIcon(ui->FullScreenBtn, 9, QChar(0xf065));
     GlobalHelper::SetIcon(ui->CloseBtn, 9, QChar(0xf00d));
+//    todo：测试显示
     ui->MovieNameLab->setText("视频名称测试");
 
     return true;
