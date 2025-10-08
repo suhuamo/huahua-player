@@ -7,6 +7,9 @@
 #include<QDesktopWidget>
 #include<QWindow>
 #include<QShortcut>
+#include<QLabel>
+#include<QPropertyAnimation>
+#include<QTimer>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -125,10 +128,19 @@ void MainWindow::SlotOnFullScreenBtnClicked()
 //        需要先将当前窗口设置为子窗口，才能取消全屏
         ui->ShowWid->setWindowFlags(Qt::SubWindow);
         ui->ShowWid->showNormal();
+        // 退出全屏后禁用ESC快捷键
+       if(_esc_shortcut_showWid) {
+           _esc_shortcut_showWid->setEnabled(false);
+       }
     } else {
         //脱离父窗口后才能设置为全屏
         ui->ShowWid->setWindowFlags(Qt::Window);
         ui->ShowWid->showFullScreen();
+        // 进入全屏后启用ESC快捷键
+        if(_esc_shortcut_showWid) {
+            _esc_shortcut_showWid->setEnabled(true);
+        }
+//        todo: 全屏后在正上方显示一行提示：按下 ESC/F11 即可退出全屏
     }
 //    让当前窗口获取焦点
     this->setFocus();
@@ -182,7 +194,8 @@ void MainWindow::initMenu()
     act_open_file->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
     act_open_stream->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));
     act_full_screen->setShortcut(QKeySequence(Qt::Key_F11));
-    // 设置为应用全局有效
+
+    // 将全屏这个行为设置为应用全局有效
     act_full_screen->setShortcutContext(Qt::ApplicationShortcut); // 因为全屏的时候焦点是在show的Lable上，不在当前窗口上，那么当前窗口的快捷键就无法生效了
 
     // 把action添加到当前窗口上
@@ -190,5 +203,10 @@ void MainWindow::initMenu()
     this->addAction(act_open_file);
     this->addAction(act_open_stream);
     this->addAction(act_full_screen);
+
+    // 创建 ShowWid 的 ESC 快捷键，初始时不启用
+    _esc_shortcut_showWid = new QShortcut(QKeySequence(Qt::Key_Escape), ui->ShowWid); // 除了像上面的 act_full_screen 直接设置为全局快捷键，还可以像这样直接指定给 ShowWid 设置快捷键
+    _esc_shortcut_showWid->setEnabled(false); // 初始禁用
+    connect(_esc_shortcut_showWid, &QShortcut::activated, this, SlotOnFullScreenBtnClicked);
 
 }
