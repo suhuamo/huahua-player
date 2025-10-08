@@ -50,16 +50,16 @@ FORMS    += mainwindow.ui \
 
 
 win32 {
-    FFMPEG_PATH = D:\\env\\lib2h\\ffmpeg\\4.2.1
+    FFMPEG_PATH = C:\\env\\lib2h\\ffmpeg\\4.2.1
     FFMPEG_LIB_PATH = $$FFMPEG_PATH\\lib\\x86
-    SDL_PATH = D:\\env\\lib2h\\SDL2
+    SDL_PATH = C:\\env\\lib2h\\SDL2
     SDL_LIB_PATH = $$SDL_PATH\\lib\\x86
 }
 
 win64 {
-    FFMPEG_PATH = D:\\env\\lib2h\\ffmpeg\\4.2.1
+    FFMPEG_PATH = C:\\env\\lib2h\\ffmpeg\\4.2.1
     FFMPEG_LIB_PATH = $$FFMPEG_PATH\\lib\\x64
-    SDL_PATH = D:\\env\\lib2h\\SDL2
+    SDL_PATH = C:\\env\\lib2h\\SDL2
     SDL_LIB_PATH = $$SDL_PATH\\lib\\x64
 }
 

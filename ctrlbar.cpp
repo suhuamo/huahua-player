@@ -45,7 +45,9 @@ bool CtrlBar::initUi()
     ui->NextBtn->setToolTip("下一个");
     ui->PlayListCtlBtn->setToolTip("播放列表");
     ui->SettingBtn->setToolTip("设置");
-    ui->VolumeBtn->setToolTip("静音");
+    ui->VolumeBtn->setToolTip("点击静音");
+//    设置进度条初始值
+    ui->VolumeSlider->setValue(MAX_SLIDER_VALUE / 2);
     return true;
 }
 
@@ -85,8 +87,10 @@ void CtrlBar::SlotOnVolumeBtnClicked()
         _last_volume_percent = ui->VolumeSlider->value();
         ui->VolumeSlider->setValue(0);
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
+        ui->VolumeBtn->setToolTip("点击恢复音量");
     } else {
         ui->VolumeSlider->setValue(_last_volume_percent);
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
+        ui->VolumeBtn->setToolTip("点击静音");
     }
 }
