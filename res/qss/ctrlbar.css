@@ -13,7 +13,7 @@ QToolTip {
     color: white;
 }
 
-/*指定该组件,播放进度条和音量条的父组件*/
+/*指定该组件,即播放进度条和音量条的父组件*/
 QWidget#PlaySliderBgWidget {
 /*下边框1px，粗线条，黑色*/
     border-bottom: 1px solid black;

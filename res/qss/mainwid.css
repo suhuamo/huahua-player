@@ -61,7 +61,16 @@ QMenu::icon {
     padding-right: 2px;
 }
 
+/*右侧的播放列表*/
 QWidget#PlaylistWid>PlaylistContents
 {
+/*边框为1px，粗线条，黑色*/
     border: 1px solid black;
+}
+
+/*中间的播放区域*/
+QWidget#CtrlBarAndShowWidget{
+/*边框为1px，粗线条，黑色，但去掉上边框*/
+    border: 1px solid black;
+    border-top:none;
 }
