@@ -1,6 +1,7 @@
 #include "show.h"
 #include "ui_show.h"
 #include"globalhelper.h"
+#include"videoctl.h"
 
 Show::Show(QWidget *parent) :
     QWidget(parent),
@@ -24,7 +25,17 @@ bool Show::Init()
     if(initUi() == false) {
         return false;
     }
+    if(connectionSignalSlots() == false) {
+        return false;
+    }
     return true;
+}
+
+void Show::OnPlay(QString strFile)
+{
+
+//    todo：在这里或者在其他地方必须校验必须是可播放的视频文件，而且当前文件得存在，不能突然被删除了。防止打开失败导致程序崩溃
+    VideoCtl::GetInstance()->start_play(strFile, ui->label->winId());
 }
 
 bool Show::initUi()
@@ -33,11 +44,25 @@ bool Show::initUi()
     setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/show.css"));
 
     ui->label->clear();
+//    没有视频的时候测试图片是否能正常显示
+#if 0
     // 使用QPixmap加载资源系统中的图片
     ui->label->setPixmap(QPixmap(":/res/player.png"));
 
     // 可选：设置QLabel允许图片缩放以适应其大小
-     ui->label->setScaledContents(true);
+    ui->label->setScaledContents(true);
+#endif
 
-    return true;
+     return true;
+}
+
+bool Show::connectionSignalSlots()
+{
+    QList<bool> listRet;
+    bool bRet;
+
+//    todo:这是何意为？为什么自己链接自己，为什么外面连接 &Show::SigPlay 的时候不直接连接 &Show::OnPlay 得了
+    bRet = connect(this, &Show::SigPlay, this, &Show::OnPlay);
+
+    return bRet;
 }

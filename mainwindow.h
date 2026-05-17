@@ -40,13 +40,13 @@ private:
     void initMenu();
 public:
     Ui::MainWindow *ui;
-    Playlist _playlist;
-    Title _title;
+    Playlist m_playlist;
+    Title m_title;
 private:
-    bool _move_drag; //移动窗口标志
-    QPoint _drag_position; //在哪个位置开始移动
-    QMenu _menu;    //菜单，不是通过.ui文件加载的，而是代码里面直接渲染的
-    QShortcut* _esc_shortcut_showWid; // 用于ESC退出全屏的快捷键
+    bool m_move_drag; //移动窗口标志
+    QPoint m_drag_position; //在哪个位置开始移动
+    QMenu m_menu;    //菜单，不是通过.ui文件加载的，而是代码里面直接渲染的
+    QShortcut* m_esc_shortcut_showWid; // 用于ESC退出全屏的快捷键
 };
 
 #endif // MAINWINDOW_H

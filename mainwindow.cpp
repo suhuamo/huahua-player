@@ -1,7 +1,4 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
 #include<QFile>
-#include"globalhelper.h"
 #include<QAction>
 #include<QKeySequence>
 #include<QDesktopWidget>
@@ -11,12 +8,17 @@
 #include<QPropertyAnimation>
 #include<QTimer>
 
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include"globalhelper.h"
+#include"videoctl.h"
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    _playlist(this),
-    _move_drag(false),
-    _menu(this)
+    m_playlist(this),
+    m_move_drag(false),
+    m_menu(this)
 {
     ui->setupUi(this);
     /*
@@ -43,16 +45,16 @@ bool MainWindow::Init()
 {
     QWidget *play_list_bar_wid = new QWidget(this);
     ui->PlaylistWid->setTitleBarWidget(play_list_bar_wid);
-    ui->PlaylistWid->setWidget(&_playlist);
+    ui->PlaylistWid->setWidget(&m_playlist);
 
     QWidget *title_bar_wid = new QWidget(this);
     ui->TitleWid->setTitleBarWidget(title_bar_wid);
-    ui->TitleWid->setWidget(&_title);
+    ui->TitleWid->setWidget(&m_title);
 
 //    mark: 通过设置 title.ui 的 maxHeight 可以让 Title 这个 DockWidget 不能被拖动
 
-    if(_title.Init() == false ||
-       _playlist.Init() == false ||
+    if(m_title.Init() == false ||
+       m_playlist.Init() == false ||
             ui->CtrlBarWid->Init() == false ||
             ui->ShowWid->Init() == false) {
         return false;
@@ -70,8 +72,8 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
     if(event->button() & Qt::LeftButton) {
 //        只有鼠标在标题栏按下时，才可以拖动窗口
         if(ui->TitleWid->geometry().contains(event->pos())) {
-            _move_drag = true;
-            _drag_position = event->globalPos() - this->pos();
+            m_move_drag = true;
+            m_drag_position = event->globalPos() - this->pos();
         }
     }
 //    执行原有的鼠标事件
@@ -80,31 +82,49 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 {
-    _move_drag = false;
+    m_move_drag = false;
     //    执行原有的鼠标事件
     QWidget::mouseReleaseEvent(event);
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
-    if(_move_drag) {
-        move(event->globalPos() - _drag_position);
+    if(m_move_drag) {
+        move(event->globalPos() - m_drag_position);
     }
     //    执行原有的鼠标事件
     QWidget::mouseMoveEvent(event);
 }
 
+//链接信号与槽
 void MainWindow::connectSignalSlots()
 {
-    connect(&_title, &Title::SigMinBtnClicked, this, &MainWindow::SlotOnMinBtnClicked);
-    connect(&_title, &Title::SigMaxBtnClicked, this, &MainWindow::SlotOnMaxBtnClicked);
-    connect(&_title, &Title::SigFullScreenBtnClicked, this, &MainWindow::SlotOnFullScreenBtnClicked);
-    connect(&_title, &Title::SigCloseBtnClicked, this, &MainWindow::SlotOnCloseBtnClicked);
-    connect(&_title, &Title::SigMenuBtnClicked, this, &MainWindow::SlotOnMenuBtnClicked);
+//    标题栏的按钮功能
+    connect(&m_title, &Title::SigMinBtnClicked, this, &MainWindow::SlotOnMinBtnClicked);
+    connect(&m_title, &Title::SigMaxBtnClicked, this, &MainWindow::SlotOnMaxBtnClicked);
+    connect(&m_title, &Title::SigFullScreenBtnClicked, this, &MainWindow::SlotOnFullScreenBtnClicked);
+    connect(&m_title, &Title::SigCloseBtnClicked, this, &MainWindow::SlotOnCloseBtnClicked);
+    connect(&m_title, &Title::SigMenuBtnClicked, this, &MainWindow::SlotOnMenuBtnClicked);
+
+    /*
+     * 开启视频播放
+     * 逻辑是：双击播放列表或者点击播放按钮的时候，调用 Playlist::SigPlay，然后触发 Show::SigPlay，去调用 VideoCtl::start_play 播放视频
+     * 然后 VideoCtl::start_play 触发时 又会去调用 &Title::SlotOnPlay 修改标签栏的视频文件名称
+     *
+     */
+    connect(&m_playlist, &Playlist::SigPlay, ui->ShowWid, &Show::SigPlay);
+
+//    状态控制栏的按钮功能
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
-    connect(&_playlist, &Playlist::SigPlay, &_title, &Title::SlotOnPlay);
-    connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &_playlist, &Playlist::SlotOnBackPlay);
-    connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &_playlist, &Playlist::SlotOnNextPlay);
+    connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);
+    connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &m_playlist, &Playlist::SlotOnNextPlay);
+
+    /*
+     * 视频播放时，界面相关变化通知
+     * 使用 DirectConnection 是因为需要任务结束时马上通知，不能扔在队列里面等待，这样会慢不及时
+     *
+     */
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigStartPlay, &m_title, &Title::SlotOnPlay, Qt::DirectConnection);
 }
 
 void MainWindow::SlotOnMinBtnClicked()
@@ -129,16 +149,16 @@ void MainWindow::SlotOnFullScreenBtnClicked()
         ui->ShowWid->setWindowFlags(Qt::SubWindow);
         ui->ShowWid->showNormal();
         // 退出全屏后禁用ESC快捷键
-       if(_esc_shortcut_showWid) {
-           _esc_shortcut_showWid->setEnabled(false);
+       if(m_esc_shortcut_showWid) {
+           m_esc_shortcut_showWid->setEnabled(false);
        }
     } else {
         //脱离父窗口后才能设置为全屏
         ui->ShowWid->setWindowFlags(Qt::Window);
         ui->ShowWid->showFullScreen();
         // 进入全屏后启用ESC快捷键
-        if(_esc_shortcut_showWid) {
-            _esc_shortcut_showWid->setEnabled(true);
+        if(m_esc_shortcut_showWid) {
+            m_esc_shortcut_showWid->setEnabled(true);
         }
 //        todo: 全屏后在正上方显示一行提示：按下 ESC/F11 即可退出全屏
     }
@@ -154,7 +174,7 @@ void MainWindow::SlotOnCloseBtnClicked()
 void MainWindow::SlotOnMenuBtnClicked()
 {
 //    在鼠标位置打开菜单
-    _menu.exec(cursor().pos());
+    m_menu.exec(cursor().pos());
 }
 
 void MainWindow::SlotOnPlayListCtrlBtnClicked()
@@ -169,11 +189,11 @@ void MainWindow::SlotOnPlayListCtrlBtnClicked()
 void MainWindow::initMenu()
 {
 //    添加菜单和行为
-    QAction *act_about = _menu.addAction(tr("关于 \t Ctrl + A"));
-    QMenu* open_menu = _menu.addMenu(tr("打开"));
+    QAction *act_about = m_menu.addAction(tr("关于 \t Ctrl + A"));
+    QMenu* open_menu = m_menu.addMenu(tr("打开"));
     QAction* act_open_file = open_menu->addAction(tr("打开文件 \t Ctrl + F"));
     QAction* act_open_stream = open_menu->addAction(tr("打开视频流 \t Ctrl + L"));
-    QAction* act_full_screen = _menu.addAction(tr("全屏/取消全屏 \t F11"));
+    QAction* act_full_screen = m_menu.addAction(tr("全屏/取消全屏 \t F11"));
 //    添加槽函数
     connect(act_about, &QAction::triggered, this, []() {
         qDebug() << "关于 \t Ctrl + A 被触发";
@@ -205,8 +225,8 @@ void MainWindow::initMenu()
     this->addAction(act_full_screen);
 
     // 创建 ShowWid 的 ESC 快捷键，初始时不启用
-    _esc_shortcut_showWid = new QShortcut(QKeySequence(Qt::Key_Escape), ui->ShowWid); // 除了像上面的 act_full_screen 直接设置为全局快捷键，还可以像这样直接指定给 ShowWid 设置快捷键
-    _esc_shortcut_showWid->setEnabled(false); // 初始禁用
-    connect(_esc_shortcut_showWid, &QShortcut::activated, this, SlotOnFullScreenBtnClicked);
+    m_esc_shortcut_showWid = new QShortcut(QKeySequence(Qt::Key_Escape), ui->ShowWid); // 除了像上面的 act_full_screen 直接设置为全局快捷键，还可以像这样直接指定给 ShowWid 设置快捷键
+    m_esc_shortcut_showWid->setEnabled(false); // 初始禁用
+    connect(m_esc_shortcut_showWid, &QShortcut::activated, this, SlotOnFullScreenBtnClicked);
 
 }

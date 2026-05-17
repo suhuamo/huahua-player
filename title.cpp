@@ -38,6 +38,7 @@ bool Title::Init()
 
 void Title::SlotOnPlay(QString filePath)
 {
+    qDebug() << "Title::SlotOnPlay";
     QFileInfo fileInfo(filePath);
     if(fileInfo.isFile()) {
         ui->MovieNameLab->setText(fileInfo.fileName());

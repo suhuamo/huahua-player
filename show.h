@@ -19,8 +19,12 @@ public:
     explicit Show(QWidget *parent = 0);
     ~Show();
     bool Init();
+    void OnPlay(QString strFile);
+signals:
+    void SigPlay(QString strFile);
 private:
     bool initUi();
+    bool connectionSignalSlots();
 
 private:
     Ui::Show *ui; // lable
