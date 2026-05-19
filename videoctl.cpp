@@ -1937,6 +1937,16 @@ bool VideoCtl::is_normal_playback_rate() {
     }
 }
 
+void VideoCtl::OnSpeed()
+{
+//    循环倍数变化
+    float speed = m_playback_rate + PLAYBACK_RATE_SCALE;
+    if(speed > PLAYBACK_RATE_MAX) {
+        speed = PLAYBACK_RATE_MIN;
+    }
+    update_speed(speed);
+}
+
 void VideoCtl::stream_toggle_pause(VideoState *is) {
     av_log_info("pause state changed, from:'%s' to:'%s'\n", is->paused ? "pause" : "not pause", !is->paused ? "pause" : "not pause");
     // 如果刚刚处于暂停状态，那么现在就需要恢复播放
@@ -2165,6 +2175,7 @@ void VideoCtl::update_speed(float speed) {
     av_log_info("playback rate changed, from:%f to:%f\n", m_playback_rate, speed);
     m_playback_rate = speed;
     m_playback_changed = true;
+    emit SigSpeed(m_playback_rate);
 }
 
 // 按照固定步长来增加播放速度

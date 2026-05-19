@@ -15,6 +15,7 @@ public:
     explicit CtrlBar(QWidget *parent = 0);
     ~CtrlBar();
     bool Init();
+    void OnSpeed(float speed);
 private:
     bool initUi();
     void connectSignalSlots();
@@ -24,6 +25,10 @@ signals:
     void SigPlayListCtlBtnClicked();
     void SigBackBtnClicked();
     void SigNextBtnClicked();
+    void SigSpeed();
+private slots:
+    void on_SpeedBtn_clicked();
+
 private:
     Ui::CtrlBar *ui;
     bool _pause;    //是否处于暂停状态

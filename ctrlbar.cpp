@@ -26,6 +26,11 @@ bool CtrlBar::Init()
     return true;
 }
 
+void CtrlBar::OnSpeed(float speed)
+{
+    ui->SpeedBtn->setText(QString("倍数:%1").arg(speed));
+}
+
 bool CtrlBar::initUi()
 {
     //加载qss
@@ -46,6 +51,7 @@ bool CtrlBar::initUi()
     ui->PlayListCtlBtn->setToolTip("播放列表");
     ui->SettingBtn->setToolTip("设置");
     ui->VolumeBtn->setToolTip("点击静音");
+    ui->SpeedBtn->setToolTip("倍速");
 //    设置进度条初始值
     ui->VolumeSlider->setValue(MAX_SLIDER_VALUE / 2);
     return true;
@@ -93,4 +99,10 @@ void CtrlBar::SlotOnVolumeBtnClicked()
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
         ui->VolumeBtn->setToolTip("点击静音");
     }
+}
+
+void CtrlBar::on_SpeedBtn_clicked()
+{
+//    设置变速
+    emit SigSpeed();
 }

@@ -47,8 +47,10 @@ public:
     int64_t get_target_frequency();
     int get_target_channels();
     bool is_normal_playback_rate();
+    void OnSpeed();
 signals:
     void SigStartPlay(QString strMsg);
+    void SigSpeed(float speed);
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();
