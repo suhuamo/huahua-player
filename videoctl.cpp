@@ -202,6 +202,8 @@ VideoState * VideoCtl::stream_open(const char *filename) {
     m_startup_volume = av_clip(SDL_MIX_MAXVOLUME * m_startup_volume / 100, 0, SDL_MIX_MAXVOLUME);
     is->audio_volume = m_startup_volume;
 
+//    启动播放的时候需要更新下界面ui的播放状态
+    emit SigPauseStat(is->paused);
     is->av_sync_type = AV_SYNC_AUDIO_MASTER;
 
     is->read_tid = std::thread(&VideoCtl::read_thread, this, is);
@@ -1945,6 +1947,16 @@ void VideoCtl::OnSpeed()
         speed = PLAYBACK_RATE_MIN;
     }
     update_speed(speed);
+}
+
+void VideoCtl::OnPause()
+{
+//    没有开启流的时候不要导致程序崩溃
+    if(m_cur_stream == nullptr) {
+        return;
+    }
+    toggle_pause(m_cur_stream);
+    emit SigPauseStat(m_cur_stream->paused);
 }
 
 void VideoCtl::stream_toggle_pause(VideoState *is) {
