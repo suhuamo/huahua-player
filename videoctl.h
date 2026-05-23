@@ -50,6 +50,7 @@ public:
     void OnSpeed();
     void OnPause();
     void OnStop();
+    void OnPlayVolume(double dPercent);
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);

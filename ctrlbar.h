@@ -18,6 +18,7 @@ public:
     void OnSpeed(float speed);
     void OnPauseStat(bool paused);
     void OnStopFinished();
+    void OnVideopVolume(double percent);
 private:
     bool initUi();
     void connectSignalSlots();
@@ -29,12 +30,15 @@ signals:
     void SigSpeed();
     void SigPlayOrPause();
     void SigStop();
+    void SigPlayVolume(double dPercent);
 private slots:
     void on_SpeedBtn_clicked();
 
     void on_PlayOrPauseBtn_clicked();
 
     void on_OverPlayBtn_clicked();
+
+    void on_VolumeSlider_valueChanged(int value);
 
 private:
     Ui::CtrlBar *ui;

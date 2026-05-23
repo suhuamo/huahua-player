@@ -1982,6 +1982,15 @@ void VideoCtl::OnStop()
     m_stop_emitted = true; // 标记已发送停止信号
 }
 
+void VideoCtl::OnPlayVolume(double dPercent)
+{
+    m_startup_volume = dPercent * SDL_MIX_MAXVOLUME;
+    if(m_cur_stream == nullptr) {
+        return;
+    }
+    m_cur_stream->audio_volume = m_startup_volume;
+}
+
 void VideoCtl::stream_toggle_pause(VideoState *is) {
     av_log_info("pause state changed, from:'%s' to:'%s'\n", is->paused ? "pause" : "not pause", !is->paused ? "pause" : "not pause");
     // 如果刚刚处于暂停状态，那么现在就需要恢复播放
