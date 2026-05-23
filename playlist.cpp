@@ -29,6 +29,12 @@ bool Playlist::Init()
 
     connectSignalSlots();
 
+//    todo测试:目前测试为了方便，默认设置几个视频文件
+    SlotOnAddFile("C:\\data\\video\\1-4min.mp4");
+    SlotOnAddFile("C:\\data\\video\\2-4min.mp4");
+    SlotOnAddFile("C:\\data\\video\\3-10s.mp4");
+    SlotOnAddFile("C:\\data\\video\\time_counter_1.mp4");
+
     return true;
 }
 

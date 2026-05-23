@@ -52,8 +52,8 @@ bool MediaList::initUi()
 void MediaList::addFile()
 {
 //    QStringList fileNameList = QFileDialog::getOpenFileNames(this, "打开文件", QDir::homePath(), "视频文件(*.mkv *.rmvb *.mp4 *.avi *.flv *.wmv *.3gp)");
-//    todo:目前测试为了方便，直接指定为有视频的文件夹
-    QStringList filePathList = QFileDialog::getOpenFileNames(this, "打开文件", "D:\\data\\video", "视频文件(*.mkv *.rmvb *.mp4 *.avi *.flv *.wmv *.3gp)");
+//    todo测试:目前测试为了方便，直接指定为有视频的文件夹
+    QStringList filePathList = QFileDialog::getOpenFileNames(this, "打开文件", "C:\\data\\video", "视频文件(*.mkv *.rmvb *.mp4 *.avi *.flv *.wmv *.3gp)");
     for(QString filePath : filePathList) {
         emit SigAddFile(filePath);
     }
