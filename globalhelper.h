@@ -21,8 +21,13 @@ public:
      * @param icon
      */
     static void SetIcon(QPushButton *btn, int iconSize, QChar icon);
+//    设置音量同步到本地文件配置文件中
+    static void SavePlayVolume(double &volume);
+//    从本地文件配置文件获取音量
+    static void GetPlayVolume(double& volume);
 private:
     GlobalHelper();
+
 };
 
 const int MAX_SLIDER_VALUE = 65536;

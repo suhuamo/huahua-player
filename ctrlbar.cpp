@@ -23,8 +23,16 @@ bool CtrlBar::Init()
     connectSignalSlots();
 
 //    设置初始音量
-    OnVideopVolume(_last_volume_percent);
-    emit SigPlayVolume(_last_volume_percent);
+    double percent = -1.0;
+//    从本地配置文件中读取
+    GlobalHelper::GetPlayVolume(percent);
+    if(percent != -1.0) {
+        OnVideopVolume(percent);
+        emit SigPlayVolume(percent);
+    } else {
+        OnVideopVolume(_last_volume_percent);
+        emit SigPlayVolume(_last_volume_percent);
+    }
 
     return true;
 }
@@ -119,6 +127,7 @@ void CtrlBar::OnVideopVolume(double percent)
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
         ui->VolumeBtn->setToolTip("点击静音");
     }
+    GlobalHelper::SavePlayVolume(percent);
 
 }
 

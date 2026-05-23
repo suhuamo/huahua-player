@@ -2,6 +2,19 @@
 #include<QFile>
 #include<QDebug>
 #include<QFont>
+#include<QDir>
+#include<QSettings>
+
+/**
+  操作系统的缓存目录
+    Windows: C:\Users\{当前用户名}\AppData\Local\Temp\flower_player_config.ini
+    macOS/Linux: /tmp/flower_player_config.ini
+ * */
+const QString PLAYER_CONFIG_BASEDIR = QDir::tempPath();
+
+const QString PLAYER_CONFIG_FILENAME = "flower_player_config.ini";
+
+const QString APP_VERSION = "0.1.0";
 
 QString GlobalHelper::GetQssStr(QString strQssPath)
 {
@@ -23,6 +36,20 @@ void GlobalHelper::SetIcon(QPushButton *btn, int iconSize, QChar icon)
     font.setPointSize(iconSize);
     btn->setFont(font);
     btn->setText(icon);
+}
+
+void GlobalHelper::SavePlayVolume(double& volume)
+{
+    QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
+    QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
+    settings.setValue("volume/size", volume);
+}
+
+void GlobalHelper::GetPlayVolume(double& volume)
+{
+    QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
+    QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
+    volume = settings.value("volume/size", volume).toDouble();
 }
 
 GlobalHelper::GlobalHelper()
