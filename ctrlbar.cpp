@@ -4,7 +4,10 @@
 
 CtrlBar::CtrlBar(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::CtrlBar)
+    ui(new Ui::CtrlBar),
+    _last_volume_percent(0.5),
+    m_total_play_seconds(0),
+    m_last_play_seconds(-1)
 {
     ui->setupUi(this);
 }
@@ -63,8 +66,6 @@ bool CtrlBar::initUi()
     ui->SettingBtn->setToolTip("设置");
     ui->VolumeBtn->setToolTip("点击静音");
     ui->SpeedBtn->setToolTip("倍速");
-//    设置进度条初始值
-    _last_volume_percent = 0.5;
 
     return true;
 }
@@ -77,6 +78,7 @@ void CtrlBar::connectSignalSlots()
     connect(ui->BackBtn, &QPushButton::clicked, this, &CtrlBar::SigBackBtnClicked);
     connect(ui->NextBtn, &QPushButton::clicked, this, &CtrlBar::SigNextBtnClicked);
     connect(ui->VolumeSlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnVolumeSliderValueChanged);
+    connect(ui->PlaySlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnPlaySliderValueChanged);
 }
 
 void CtrlBar::OnPauseStat(bool paused)
@@ -104,6 +106,9 @@ void CtrlBar::OnStopFinished()
     ui->VideoPlayTimeTimeEdit->setTime(stopTime);
     GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
     ui->PlayOrPauseBtn->setToolTip("点击播放");
+
+    m_last_play_seconds = -1;
+    m_total_play_seconds = 0;
 }
 
 void CtrlBar::OnVideopVolume(double percent)
@@ -123,6 +128,46 @@ void CtrlBar::OnVideopVolume(double percent)
     }
     GlobalHelper::SavePlayVolume(percent);
 
+}
+
+void CtrlBar::OnVideoTotalSeconds(int seconds)
+{
+    m_total_play_seconds = seconds;
+
+    int thh, tmm, tss;
+    thh = seconds / 3600;
+    tmm = (seconds % 3600) / 60;
+    tss = seconds % 60;
+    QTime totalTime(thh, tmm, tss);
+    ui->VideoTotalTimeTimeEdit->setTime(totalTime);
+}
+
+void CtrlBar::OnVideoPlaySeconds(int seconds)
+{
+    // 优化，如果当前 seconds 和上一次 seconds 一样，那么就不用更新ui了
+    if(m_last_play_seconds == seconds) {
+        return;
+    }
+    m_last_play_seconds = seconds;
+
+    int thh, tmm, tss;
+    thh = seconds / 3600;
+    tmm = (seconds % 3600) / 60;
+    tss = seconds % 60;
+    QTime totalTime(thh, tmm, tss);
+    ui->VideoPlayTimeTimeEdit->setTime(totalTime);
+    static int index = 0;
+    qDebug() << "OnVideoPlaySeconds index: " << index++ << " seconds:" << seconds;
+//    qDebug() << "OnVideoPlaySeconds: " << seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE;
+    if(seconds >= 0) {
+        ui->PlaySlider->setValue(seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE);
+    }
+}
+
+void CtrlBar::OnPlaySliderValueChanged()
+{
+    double percent = ui->PlaySlider->value() * 1.0 / ui->PlaySlider->maximum();
+    emit SigPlaySeek(percent);
 }
 
 void CtrlBar::SlotOnVolumeBtnClicked()

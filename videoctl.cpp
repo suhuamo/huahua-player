@@ -353,6 +353,8 @@ void VideoCtl::read_thread(VideoState *is) {
 
     is->realtime = is_realtime(ic);
 
+    emit SigVideoTotalSeconds(ic->duration / AV_TIME_BASE);
+
     // 如果有自己期望的视频流，那么这里就先尝试使用期望的视频流
     for (int i = 0; i < ic->nb_streams; i++) {
         AVStream *st = ic->streams[i];
@@ -1680,6 +1682,13 @@ display:
      * 比如一个图片显示 5s，假设这个方法在5s内被调用40次，总不能每次都调用 video_display 重新画图吧，多浪费资源，这 5s 只要保证图片显示的是我们这一张图片就可以了。
      */
     is->force_refresh = 0;
+
+//    todo:步长的时候会导致 get_master_clock = NAN 会存在问题吧
+    double clock = get_master_clock(is);
+    if (!std::isnan(clock) && clock >= 0) {
+        double media_time = clock * m_playback_rate;
+        emit SigVideoPlaySeconds((int)media_time);
+    }
 }
 
 // 视频同步流程，判断是否需要追赶音频，即需要本次追赶的话本张图片播放时间需要修改多少毫秒
@@ -1982,13 +1991,26 @@ void VideoCtl::OnStop()
     m_stop_emitted = true; // 标记已发送停止信号
 }
 
-void VideoCtl::OnPlayVolume(double dPercent)
+void VideoCtl::OnPlayVolume(double percent)
 {
-    m_startup_volume = dPercent * SDL_MIX_MAXVOLUME;
+    m_startup_volume = percent * SDL_MIX_MAXVOLUME;
     if(m_cur_stream == nullptr) {
         return;
     }
     m_cur_stream->audio_volume = m_startup_volume;
+}
+
+void VideoCtl::OnPlaySeek(double percent)
+{
+    if(m_cur_stream == nullptr) {
+        return;
+    }
+    int64_t ts = percent * m_cur_stream->ic->duration;
+//    如果指定了从第几秒开始播放，那么seek的时候最小值需要加上这个时间
+    if(m_cur_stream->ic->start_time != AV_NOPTS_VALUE) {
+        ts += m_cur_stream->ic->start_time;
+    }
+    stream_seek(m_cur_stream, ts, 0);
 }
 
 void VideoCtl::stream_toggle_pause(VideoState *is) {

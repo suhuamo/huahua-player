@@ -19,6 +19,9 @@ public:
     void OnPauseStat(bool paused);
     void OnStopFinished();
     void OnVideopVolume(double percent);
+    void OnVideoTotalSeconds(int seconds);
+    void OnVideoPlaySeconds(int seconds);
+    void OnPlaySliderValueChanged();
 private:
     bool initUi();
     void connectSignalSlots();
@@ -31,7 +34,8 @@ signals:
     void SigSpeed();
     void SigPlayOrPause();
     void SigStop();
-    void SigPlayVolume(double dPercent);
+    void SigPlayVolume(double percent);
+    void SigPlaySeek(double percent);
 private slots:
     void on_SpeedBtn_clicked();
 
@@ -42,6 +46,8 @@ private slots:
 private:
     Ui::CtrlBar *ui;
     double _last_volume_percent;    //变为静音前的音量大小
+    int m_total_play_seconds;
+    int m_last_play_seconds; //上次播放时间
 };
 
 #endif // CTRLBAR_H

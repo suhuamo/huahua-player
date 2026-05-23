@@ -50,13 +50,16 @@ public:
     void OnSpeed();
     void OnPause();
     void OnStop();
-    void OnPlayVolume(double dPercent);
+    void OnPlayVolume(double percent);
+    void OnPlaySeek(double percent);
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
     void SigPauseStat(bool paused);
     void SigStopFinished(); // 结束播放
     void SigStop();
+    void SigVideoTotalSeconds(int seconds);
+    void SigVideoPlaySeconds(int seconds);
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();
