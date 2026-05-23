@@ -137,6 +137,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
     emit SigStartPlay(filename);
 
     m_play_wid = play_wid;
+    m_current_file = filename;
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -1961,6 +1962,10 @@ void VideoCtl::OnPause()
 {
 //    没有开启流的时候不要导致程序崩溃
     if(m_cur_stream == nullptr) {
+//        如果当前没有播放流，但存在当前文件，则重新播放
+        if(!m_current_file.isEmpty() && m_play_wid != 0) {
+            start_play(m_current_file, m_play_wid);
+        }
         return;
     }
     toggle_pause(m_cur_stream);
