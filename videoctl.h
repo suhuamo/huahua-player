@@ -49,13 +49,17 @@ public:
     bool is_normal_playback_rate();
     void OnSpeed();
     void OnPause();
+    void OnStop();
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
     void SigPauseStat(bool paused);
+    void SigStopFinished(); // 结束播放
+    void SigStop();
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();
+    bool ConnectionSignalSlots();
     VideoState* stream_open(const char* filename);
     void init_clock(Clock *c, int *queueSerial);
     void set_clock(Clock *c, double pts, int serial);
@@ -85,7 +89,6 @@ private:
     int realloc_texture(SDL_Texture **texture, Uint32 new_format, int new_width, int new_height, SDL_BlendMode blend_mode, int init_texture);
     int upload_texture(SDL_Texture *tex, AVFrame *frame, struct SwsContext **img_convert_ctx);
     int stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *queue);
-    void stop();
 
     void stream_toggle_pause(VideoState *is);
     void toggle_pause(VideoState *is);

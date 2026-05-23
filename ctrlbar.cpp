@@ -83,6 +83,16 @@ void CtrlBar::OnPauseStat(bool paused)
     }
 }
 
+void CtrlBar::OnStopFinished()
+{
+    ui->PlaySlider->setValue(0);
+    QTime stopTime(0, 0, 0);
+    ui->VideoTotalTimeTimeEdit->setTime(stopTime);
+    ui->VideoPlayTimeTimeEdit->setTime(stopTime);
+    GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
+    ui->PlayOrPauseBtn->setToolTip("点击播放");
+}
+
 void CtrlBar::SlotOnVolumeBtnClicked()
 {
 //    todo:如果是拖放进度，变为0和变为非0也要改变图标状态
@@ -108,4 +118,9 @@ void CtrlBar::on_SpeedBtn_clicked()
 void CtrlBar::on_PlayOrPauseBtn_clicked()
 {
     emit SigPlayOrPause();
+}
+
+void CtrlBar::on_OverPlayBtn_clicked()
+{
+    emit SigStop();
 }

@@ -17,6 +17,7 @@ public:
     bool Init();
     void OnSpeed(float speed);
     void OnPauseStat(bool paused);
+    void OnStopFinished();
 private:
     bool initUi();
     void connectSignalSlots();
@@ -27,10 +28,13 @@ signals:
     void SigNextBtnClicked();
     void SigSpeed();
     void SigPlayOrPause();
+    void SigStop();
 private slots:
     void on_SpeedBtn_clicked();
 
     void on_PlayOrPauseBtn_clicked();
+
+    void on_OverPlayBtn_clicked();
 
 private:
     Ui::CtrlBar *ui;

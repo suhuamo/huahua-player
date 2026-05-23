@@ -97,6 +97,11 @@ bool VideoCtl::init() {
     if (m_init)
         return true;
 
+    if (ConnectionSignalSlots() == false)
+    {
+        return false;
+    }
+
     // 设置 FFmpeg 日志级别为 TRACE，以输出最详细的调试信息
     // av_log_set_level(AV_LOG_TRACE);
 
@@ -110,6 +115,12 @@ bool VideoCtl::init() {
     m_screen_height = 1080;
 
     m_init = true;
+    return true;
+}
+
+bool VideoCtl::ConnectionSignalSlots()
+{
+    connect(this, &VideoCtl::SigStop, &VideoCtl::OnStop);
     return true;
 }
 
@@ -487,7 +498,7 @@ void VideoCtl::read_thread(VideoState *is) {
         if (!is->paused && (!is->video_st || (is->viddec.finished == is->videoq.serial && frame_queue_nb_remaining(&is->pictq) == 0))
                         && (!is->audio_st || (is->auddec.finished == is->audioq.serial && frame_queue_nb_remaining(&is->sampq) == 0))) {
             av_log_info("play stop\n");
-            stop();
+            emit SigStop();
             /*
              * mark：这里可以写 continue，也可以写 break。上面的 stop 会将 m_play_loop 改为 false，即表示退出循环了，而 loop_thread 中会判断 m_play_loop，如果为 false，就会退出循环，调用 do_exit 会退出程序，
              * 而 do_exit 会将 abort_request 置为 1，即这个 while 循环的第一个判断，break 出去。这样的话比较美观，因为所有退出相关的操作都交给 abort_request 控制，这样我们只需要关注 abort_request 就可以了。
@@ -1329,6 +1340,7 @@ void VideoCtl::do_exit(VideoState *is) {
         // SDL_DestroyWindow(m_window);
         m_window = nullptr;
     }
+    emit SigStopFinished();
 }
 
 void VideoCtl::stream_close(VideoState *is) {
@@ -1900,10 +1912,6 @@ int VideoCtl::stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue
              queue->nb_packets > MIN_FRAMES && (!queue->duration || av_q2d(st->time_base) * queue->duration > 1.0);
 }
 
-void VideoCtl::stop() {
-    m_play_loop = false;
-}
-
 bool VideoCtl::get_playback_change() {
     return m_playback_changed;
 }
@@ -1957,6 +1965,11 @@ void VideoCtl::OnPause()
     }
     toggle_pause(m_cur_stream);
     emit SigPauseStat(m_cur_stream->paused);
+}
+
+void VideoCtl::OnStop()
+{
+    m_play_loop = false;
 }
 
 void VideoCtl::stream_toggle_pause(VideoState *is) {
@@ -2204,5 +2217,3 @@ void VideoCtl::sub_speed() {
 void VideoCtl::reset_speed() {
     update_speed(PLAYBACK_RATE_RESET);
 }
-
-
