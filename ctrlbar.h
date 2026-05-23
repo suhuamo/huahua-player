@@ -23,6 +23,7 @@ private:
     bool initUi();
     void connectSignalSlots();
     void SlotOnVolumeBtnClicked();
+    void OnVolumeSliderValueChanged();
 signals:
     void SigPlayListCtlBtnClicked();
     void SigBackBtnClicked();
@@ -37,8 +38,6 @@ private slots:
     void on_PlayOrPauseBtn_clicked();
 
     void on_OverPlayBtn_clicked();
-
-    void on_VolumeSlider_valueChanged(int value);
 
 private:
     Ui::CtrlBar *ui;

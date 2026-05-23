@@ -76,6 +76,7 @@ void CtrlBar::connectSignalSlots()
     connect(ui->VolumeBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnVolumeBtnClicked);
     connect(ui->BackBtn, &QPushButton::clicked, this, &CtrlBar::SigBackBtnClicked);
     connect(ui->NextBtn, &QPushButton::clicked, this, &CtrlBar::SigNextBtnClicked);
+    connect(ui->VolumeSlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnVolumeSliderValueChanged);
 }
 
 void CtrlBar::OnPauseStat(bool paused)
@@ -107,15 +108,8 @@ void CtrlBar::OnStopFinished()
 
 void CtrlBar::OnVideopVolume(double percent)
 {
-    qDebug() << "OnVideopVolume percent:" << percent << " _last_volume_percent: " << _last_volume_percent;
     ui->VolumeSlider->setValue(percent * MAX_SLIDER_VALUE);
-
-
-    // 因为 slider 改变，一定会调用这个方法，导致 _last_volume_percent 每次都会被更新为最新值，如果设置为静音，那么_last_volume_percent 就会为0。所以如果发生了静音事件，我们就不更新 _last_volume_percent 的值，即保存静音的值
-    if (percent > 0) {
-        _last_volume_percent = percent;
-    }
-    qDebug() << "OnVideopVolume percent:" << percent << " _last_volume_percent: " << _last_volume_percent;
+    _last_volume_percent = percent;
 
     if (_last_volume_percent == 0)
     {
@@ -133,21 +127,28 @@ void CtrlBar::OnVideopVolume(double percent)
 
 void CtrlBar::SlotOnVolumeBtnClicked()
 {
+    // 静音和恢复静音并不会改变 _last_volume_percent 的值，因为 _last_volume_percent 只会被滑动条滑动改变
 //    如果此时是非静音状态
     if(ui->VolumeBtn->text() == QChar(0xf028)) {
-        qDebug() << "静音前音量百分比:" << _last_volume_percent;
         ui->VolumeSlider->setValue(0);
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
         ui->VolumeBtn->setToolTip("点击恢复音量");
         emit SigPlayVolume(0);
     } else {
-        qDebug() << "恢复音量百分比:" << _last_volume_percent;
 //        恢复之前的音量百分比
         ui->VolumeSlider->setValue(_last_volume_percent * MAX_SLIDER_VALUE);
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
         ui->VolumeBtn->setToolTip("点击静音");
         emit SigPlayVolume(_last_volume_percent);
     }
+}
+
+void CtrlBar::OnVolumeSliderValueChanged()
+{
+    double percent = ui->VolumeSlider->value() * 1.0 / ui->VolumeSlider->maximum();
+    emit SigPlayVolume(percent);
+
+    OnVideopVolume(percent);
 }
 
 void CtrlBar::on_SpeedBtn_clicked()
@@ -164,13 +165,4 @@ void CtrlBar::on_PlayOrPauseBtn_clicked()
 void CtrlBar::on_OverPlayBtn_clicked()
 {
     emit SigStop();
-}
-
-void CtrlBar::on_VolumeSlider_valueChanged(int value)
-{
-    qDebug() << "on_VolumeSlider_valueChanged value:" << value << " _last_volume_percent: " << _last_volume_percent;
-    double percent = value * 1.0 / ui->VolumeSlider->maximum();
-    emit SigPlayVolume(percent);
-
-    OnVideopVolume(percent);
 }
