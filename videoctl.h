@@ -130,6 +130,7 @@ private:
     bool m_playback_changed; //播放速度是否改变
     WId m_play_wid;//播放窗口
     QString m_current_file; //当前播放的文件路径
+    bool m_stop_emitted; //标记是否已经发送过停止信号
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

@@ -90,7 +90,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_is_full_screen(false),
     m_playback_rate(PLAYBACK_RATE_RESET),
     m_playback_changed(false),
-    m_audio_speed_convert(nullptr){
+    m_audio_speed_convert(nullptr),
+    m_stop_emitted(false){
 }
 
 bool VideoCtl::init() {
@@ -138,6 +139,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
 
     m_play_wid = play_wid;
     m_current_file = filename;
+    m_stop_emitted = false; // 重置停止标志
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -498,13 +500,14 @@ void VideoCtl::read_thread(VideoState *is) {
         // 如果在非暂停状态下，没有视频流或者解码器解码结束了，就代表视频文件读取完毕了，结束播放
         if (!is->paused && (!is->video_st || (is->viddec.finished == is->videoq.serial && frame_queue_nb_remaining(&is->pictq) == 0))
                         && (!is->audio_st || (is->auddec.finished == is->audioq.serial && frame_queue_nb_remaining(&is->sampq) == 0))) {
-            av_log_info("play stop\n");
-            emit SigStop();
             /*
-             * mark：这里可以写 continue，也可以写 break。上面的 stop 会将 m_play_loop 改为 false，即表示退出循环了，而 loop_thread 中会判断 m_play_loop，如果为 false，就会退出循环，调用 do_exit 会退出程序，
-             * 而 do_exit 会将 abort_request 置为 1，即这个 while 循环的第一个判断，break 出去。这样的话比较美观，因为所有退出相关的操作都交给 abort_request 控制，这样我们只需要关注 abort_request 就可以了。
-             * 但是我担心一个事情，如果 abort_request 没有被马上置为 1，那么这里 stop 又会被调用一次。目前来说 stop 被调用多次没什么问题，因为它只做了一件事，就是将 m_play_loop 置为 false。但后续的版本中不确定会不会引发问题。
+             * mark：使用标志位确保 SigStop 只发送一次，防止在 abort_request 被设置之前重复触发。
+             * 流程：这里发射 SigStop → OnStop 设置 m_play_loop=false → loop_thread 退出循环 → do_exit 设置 abort_request=1 → 这里 while 循环检测到 abort_request 后 break
              */
+            if (!m_stop_emitted) {
+                m_stop_emitted = true;
+                emit SigStop();
+            }
             continue;
         }
 
@@ -1974,7 +1977,9 @@ void VideoCtl::OnPause()
 
 void VideoCtl::OnStop()
 {
+    qDebug() << "play stop";
     m_play_loop = false;
+    m_stop_emitted = true; // 标记已发送停止信号
 }
 
 void VideoCtl::stream_toggle_pause(VideoState *is) {
