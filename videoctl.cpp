@@ -1452,53 +1452,6 @@ void VideoCtl::loop_thread(VideoState *curStream) {
         refresh_loop_wait_event(curStream, &event);
         // 处理键盘事件
         switch (event.type) {
-            case SDL_KEYDOWN:
-                switch (event.key.keysym.sym) {
-                    case SDLK_SPACE:
-                        toggle_pause(curStream);
-                        break;
-                    case SDLK_s:
-                        step_to_next_frame(curStream);
-                        break;
-                    case SDLK_LEFT:
-                        stream_seek_back();
-                        break;
-                    case SDLK_RIGHT:
-                        stream_seek_forward();
-                        break;
-                    case SDLK_a:
-                        stream_cycle_channel(AVMEDIA_TYPE_AUDIO);
-                        break;
-                    case SDLK_v:
-                        stream_cycle_channel(AVMEDIA_TYPE_VIDEO);
-                        break;
-                    case SDLK_c:
-                        stream_cycle_channel(AVMEDIA_TYPE_VIDEO);
-                        stream_cycle_channel(AVMEDIA_TYPE_AUDIO);
-                        break;
-                    case SDLK_f:
-                        toggle_full_screen();
-                        break;
-                    case SDLK_UP:
-                        add_volume();
-                        break;
-                    case SDLK_DOWN:
-                        sub_volume();
-                        break;
-                        // 本来考虑使用 +、-、= 来控制播放速度，但是 + 和 = 可能在同一个按键，导致冲突，所以使用 [、] 来控制播放速度
-                    case SDLK_RIGHTBRACKET:
-                        add_speed();
-                        break;
-                    case SDLK_LEFTBRACKET:
-                        sub_speed();
-                        break;
-                    case SDLK_EQUALS:
-                        reset_speed();
-                        break;
-                    default:
-                        break;
-                }
-                break;
             case SDL_WINDOWEVENT:
                 // 窗口大小改变事件
                 switch (event.window.event) {
