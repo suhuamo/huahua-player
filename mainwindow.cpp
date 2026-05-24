@@ -114,6 +114,7 @@ void MainWindow::connectSignalSlots()
      */
     connect(&m_playlist, &Playlist::SigPlay, ui->ShowWid, &Show::SigPlay);
 
+//    图片显示窗口的事件功能，比如拖拽、快捷键按下等
     connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
 
 //    状态控制栏的按钮功能
