@@ -13,6 +13,13 @@ Show::Show(QWidget *parent) :
     //    开启鼠标跟踪，用于播放时隐藏
     this->setMouseTracking(true);
 
+//    不做下面两个配置的添加，会导致：当窗口从后台恢复时，Qt 会清除 widget 的背景，造成黑屏。
+    //防止过度刷新显示，告诉 Qt 这个 widget 会处理自己的所有绘制，Qt 不需要清除背景【即SDL去处理的绘制】
+    this->setAttribute(Qt::WA_OpaquePaintEvent);
+    //    防止 Qt 自动刷新 QLabel
+    ui->label->setUpdatesEnabled(false);
+
+
 }
 
 Show::~Show()
