@@ -3,6 +3,9 @@
 
 #include <QWidget>
 #include<QListWidget>
+#include<QDropEvent>
+#include<QDragEnterEvent>
+#include<QMimeData>
 
 namespace Ui {
 class Playlist;
@@ -20,6 +23,11 @@ public:
     void SlotOnListItemDoubleClicked(QListWidgetItem *item);
     void SlotOnBackPlay();
     void SlotOnNextPlay();
+protected:
+//    鼠标拖拽放下事件
+    void dropEvent(QDropEvent *event);
+//    鼠标拖动事件
+    void dragEnterEvent(QDragEnterEvent *event);
 
 private:
     bool initUi();

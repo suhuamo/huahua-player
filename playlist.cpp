@@ -51,6 +51,9 @@ bool Playlist::Init()
         ui->List->setCurrentRow(0);
     }
 
+//    使得当前QT控制开启拖拽功能
+    setAcceptDrops(true);
+
     return true;
 }
 
@@ -151,4 +154,22 @@ void Playlist::SlotOnNextPlay()
 //        更新列表选择状态
         ui->List->setCurrentRow(_current_play_list_index);
     }
+}
+
+void Playlist::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> urls = event->mimeData()->urls();
+    if(urls.isEmpty()) {
+        return;
+    }
+    for(QUrl url: urls) {
+        QString strFileName = url.toLocalFile();
+        SlotOnAddFile(strFileName);
+    }
+}
+
+void Playlist::dragEnterEvent(QDragEnterEvent *event)
+{
+//    允许当前拖拽生效，使得事件往后续传递，即给 dropEvent 可以响应
+    event->acceptProposedAction();
 }
