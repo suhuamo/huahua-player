@@ -65,6 +65,7 @@ signals:
     void SigVideoTotalSeconds(int seconds);
     void SigVideoPlaySeconds(int seconds);
     void SigVideoVolume(double percent);
+    void SigFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();

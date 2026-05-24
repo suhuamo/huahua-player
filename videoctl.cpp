@@ -5,6 +5,7 @@
 #include "videoctl.h"
 
 #include <cmath>
+#include <QMutex>
 #if defined(_WIN32)
 #include <objbase.h>
 #endif
@@ -46,7 +47,7 @@ const char *wanted_stream_spec[AVMEDIA_TYPE_NB] = {0};
  */
 const char* forced_codec_name = nullptr;
 // 界面显示锁
-SDL_mutex *g_show_rect_mutex = SDL_CreateMutex();
+QMutex g_show_rect_mutex;
 // 音频回调时的时间戳
 static int64_t g_audio_callback_time;
 /*
@@ -1710,12 +1711,15 @@ void VideoCtl::video_display(VideoState *is) {
     if (!m_window)
         video_open();
     if (m_renderer) {
-        SDL_LockMutex(g_show_rect_mutex);
-        SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
-        SDL_RenderClear(m_renderer);
-        video_image_display(is);
-        SDL_RenderPresent(m_renderer);
-        SDL_UnlockMutex(g_show_rect_mutex);
+        if (g_show_rect_mutex.tryLock()) {
+            SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+            SDL_RenderClear(m_renderer);
+            video_image_display(is);
+            SDL_RenderPresent(m_renderer);
+            g_show_rect_mutex.unlock();
+        }
+    } else {
+        qDebug() << "VideoCtl::video_display - m_renderer is null!";
     }
 }
 
@@ -1723,10 +1727,12 @@ void VideoCtl::video_open() {
     int w,h;
     w = m_screen_width;
     h = m_screen_height;
+    qDebug() << "VideoCtl::video_open - m_play_wid:" << m_play_wid << "screen size:" << w << "x" << h;
     if (!m_window) {
         int flags = SDL_WINDOW_SHOWN;
         flags |= SDL_WINDOW_RESIZABLE;
         m_window = SDL_CreateWindowFrom((void *)m_play_wid);
+        qDebug() << "VideoCtl::video_open - m_window created:" << m_window;
         SDL_GetWindowSize(m_window, &w, &h);//初始宽高设置为显示控件宽高
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
         if (m_window) {
@@ -1752,12 +1758,18 @@ void VideoCtl::video_open() {
 
     m_cur_stream->width = w;
     m_cur_stream->height = h;
+    qDebug() << "VideoCtl::video_open - done, stream size:" << m_cur_stream->width << "x" << m_cur_stream->height;
 }
 
 void VideoCtl::video_image_display(VideoState *is) {
     Frame *vp;
     SDL_Rect rect;
     vp = frame_queue_peek_last(&is->pictq);
+
+    if (!vp) {
+        qDebug() << "VideoCtl::video_image_display - vp is NULL!";
+        return;
+    }
 
     // 设置显示区域【单纯是大小，不涉及图片内容】,同时窗口大小变动时，这个函数会重新计算显示区域，让图片同步窗口变大或变小
     calculate_display_rect(&rect, is->xleft, is->ytop, m_cur_stream->width, m_cur_stream->height, vp->width, vp->height, vp->sar);
@@ -1776,6 +1788,8 @@ void VideoCtl::video_image_display(VideoState *is) {
         if (m_frame_width != vp->frame->width || m_frame_height != vp->frame->height) {
             m_frame_width = vp->frame->width;
             m_frame_height = vp->frame->height;
+            qDebug() << "VideoCtl::video_image_display - emitting SigFrameDimensionsChanged" << m_frame_width << m_frame_height;
+            emit SigFrameDimensionsChanged(m_frame_width, m_frame_height);
         }
     }
     /*mark：无论你图片有多大，我 rect 设置了多大，最后图片显示就是多大，即最后 SDL_RenderCopyEx 会帮我们做等比例缩放处理 */

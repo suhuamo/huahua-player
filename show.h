@@ -5,15 +5,12 @@
 #include<QDropEvent>
 #include<QDragEnterEvent>
 #include<QMimeData>
+#include<QResizeEvent>
 
 namespace Ui {
 class Show;
 }
 
-//
-///
-/// \brief 视频界面显示类
-///
 class Show : public QWidget
 {
     Q_OBJECT
@@ -23,20 +20,24 @@ public:
     ~Show();
     bool Init();
     void OnPlay(QString strFile);
+    void OnFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
 protected:
-    //    鼠标拖拽放下事件
     void dropEvent(QDropEvent *event);
-    //    鼠标拖动事件
     void dragEnterEvent(QDragEnterEvent *event);
+    void resizeEvent(QResizeEvent *event);
+private:
+    void ChangeShow();
+    bool initUi();
+    bool connectionSignalSlots();
+
 signals:
     void SigPlay(QString strFile);
     void SigOpenFile(QString strFile);
 private:
-    bool initUi();
-    bool connectionSignalSlots();
+    Ui::Show *ui;
 
-private:
-    Ui::Show *ui; // lable
+    int m_nLastFrameWidth;
+    int m_nLastFrameHeight;
 };
 
 #endif // SHOW_H

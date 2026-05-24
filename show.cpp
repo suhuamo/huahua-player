@@ -2,6 +2,11 @@
 #include "ui_show.h"
 #include"globalhelper.h"
 #include"videoctl.h"
+#include <QDebug>
+#include <QtMath>
+#include <QMutex>
+
+extern QMutex g_show_rect_mutex;
 
 Show::Show(QWidget *parent) :
     QWidget(parent),
@@ -10,8 +15,6 @@ Show::Show(QWidget *parent) :
     ui->setupUi(this);
 //    接受拖拽事件，可以直接把视频文件拖动到播放界面开始播放
     setAcceptDrops(true);
-    //    开启鼠标跟踪，用于播放时隐藏
-    this->setMouseTracking(true);
 
 //    不做下面两个配置的添加，会导致：当窗口从后台恢复时，Qt 会清除 widget 的背景，造成黑屏。
     //防止过度刷新显示，告诉 Qt 这个 widget 会处理自己的所有绘制，Qt 不需要清除背景【即SDL去处理的绘制】
@@ -19,6 +22,8 @@ Show::Show(QWidget *parent) :
     //    防止 Qt 自动刷新 QLabel
     ui->label->setUpdatesEnabled(false);
 
+    m_nLastFrameWidth = 0;
+    m_nLastFrameHeight = 0;
 
 }
 
@@ -85,11 +90,62 @@ bool Show::initUi()
 
 bool Show::connectionSignalSlots()
 {
-    QList<bool> listRet;
     bool bRet;
 
 //    todo:这是何意为？为什么自己链接自己，为什么外面连接 &Show::SigPlay 的时候不直接连接 &Show::OnPlay 得了
     bRet = connect(this, &Show::SigPlay, this, &Show::OnPlay);
 
     return bRet;
+}
+
+void Show::OnFrameDimensionsChanged(int nFrameWidth, int nFrameHeight)
+{
+    qDebug() << "Show::OnFrameDimensionsChanged" << nFrameWidth << nFrameHeight;
+    
+    // Only update if dimensions actually changed
+    if (m_nLastFrameWidth == nFrameWidth && m_nLastFrameHeight == nFrameHeight) {
+        return;
+    }
+    
+    m_nLastFrameWidth = nFrameWidth;
+    m_nLastFrameHeight = nFrameHeight;
+
+    ChangeShow();
+}
+
+void Show::ChangeShow()
+{
+    g_show_rect_mutex.lock();
+    qDebug() << "Show::ChangeShow - size:" << width() << "x" << height() << "frame:" << m_nLastFrameWidth << "x" << m_nLastFrameHeight;
+    if(m_nLastFrameWidth == 0 && m_nLastFrameHeight == 0) {
+        qDebug() << "Show::ChangeShow - no frame dimensions, setting label to full size";
+        ui->label->setGeometry(0, 0, width(), height());
+    } else {
+        float aspect_ratio;
+        int width, height, x, y;
+        int scr_width = this->width();
+        int scr_height = this->height();
+
+        aspect_ratio = (float)m_nLastFrameWidth / (float)m_nLastFrameHeight;
+        qDebug() << "Show::ChangeShow - aspect_ratio:" << aspect_ratio;
+
+        height = scr_height;
+        width = lrint(height * aspect_ratio) & ~1;
+        if(width > scr_width) {
+            width = scr_width;
+            height = lrint(width / aspect_ratio) & ~1;
+        }
+        x = (scr_width - width) / 2;
+        y = (scr_height - height) / 2;
+
+        qDebug() << "Show::ChangeShow - final rect:" << x << y << width << height;
+        ui->label->setGeometry(x, y, width, height);
+    }
+    g_show_rect_mutex.unlock();
+}
+
+void Show::resizeEvent(QResizeEvent *event)
+{
+    Q_UNUSED(event);
+    ChangeShow();
 }

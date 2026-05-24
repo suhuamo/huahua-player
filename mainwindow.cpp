@@ -40,7 +40,15 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-//todo：这Init为什么要让外面调用呢，在构造函数里面自己调用不行吗【可能是为了节省资源，因为有的窗口创建了对象但是不需要马上加载，那么Init延迟调用可以减少卡顿】
+/*
+mark：这Init为什么要让外面调用呢，在构造函数里面自己调用不行吗【可能是为了节省资源，因为有的窗口创建了对象但是不需要马上加载，那么Init延迟调用可以减少卡顿】
+* 因为 Init 内部可能失败，如果失败了，代表存在某个地方报错了，比如资源不够等，所以我们需要将 init 函数提取出来，让外部调用，外部如果调用当前类的init方法失败了，就代表当前类无法使用。
+外部自己再做其他处理，比如直接退出程序，或者申请另一个资源类，不使用当前类。
+举个例子：要做 word
+我们选择打开 wps，那么先创建 wsp 对象，发现 wps.init 报错了，说明 wps 无法使用，
+那么我们选择打开 excel，如果 excel.init 成功了，那么我就选择使用 excel了。
+就不会说 wps 明明无法使用，我们却还拿着 wps 使用，这样肯定会导致有问题的。
+*/
 bool MainWindow::Init()
 {
     QWidget *play_list_bar_wid = new QWidget(this);
@@ -161,7 +169,10 @@ void MainWindow::connectSignalSlots()
     connect(ui->CtrlBarWid, &CtrlBar::SigPlaySeek, VideoCtl::GetInstance(), &VideoCtl::OnPlaySeek);
 
     /*
-     * 视频播放时，界面相关变化通知[有的是视频播放后才知道一点一点通知界面的，比如现在的播放时间；有的是快捷键按下直接通知 VideoCtl的，所以 VideCtl 需要反馈给界面]
+     * 视频播放时，界面相关变化通知
+     * - 有的是视频播放后才知道一点一点通知界面的，比如现在的播放时间；
+     * - 有的是快捷键按下直接通知 VideoCtl的，所以 VideCtl 需要反馈给界面,比如左右按键
+     * - 有的是窗口大小发生改变了，我们的 SDL 窗口大小也会改变，所以 VideCtl 需要反馈给界面
      * 使用 DirectConnection 是因为需要 signal 任务结束时马上通知 slot 任务，不能扔在队列里面等待，这样会慢不及时。故直接在发送者线程执行这两个方法，相当于直接回调，即 this.signal, receiver.slot
      * 使用 QueuedConnection 是因为双方不在同一个线程，防止出现数据竞争或者崩溃，故直接丢给将当前方法丢给接受者线程执行。相当于观察者模式，在 receiver 线程执行 sender.signal，执行完成后 notify 当前线程执行 slot 方法
      *
@@ -173,6 +184,7 @@ void MainWindow::connectSignalSlots()
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoTotalSeconds, ui->CtrlBarWid, &CtrlBar::OnVideoTotalSeconds, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoPlaySeconds, ui->CtrlBarWid, &CtrlBar::OnVideoPlaySeconds, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVideopVolume);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigFrameDimensionsChanged, ui->ShowWid, &Show::OnFrameDimensionsChanged, Qt::QueuedConnection);
 
 }
 
