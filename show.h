@@ -2,6 +2,9 @@
 #define SHOW_H
 
 #include <QWidget>
+#include<QDropEvent>
+#include<QDragEnterEvent>
+#include<QMimeData>
 
 namespace Ui {
 class Show;
@@ -20,8 +23,14 @@ public:
     ~Show();
     bool Init();
     void OnPlay(QString strFile);
+protected:
+    //    鼠标拖拽放下事件
+    void dropEvent(QDropEvent *event);
+    //    鼠标拖动事件
+    void dragEnterEvent(QDragEnterEvent *event);
 signals:
     void SigPlay(QString strFile);
+    void SigOpenFile(QString strFile);
 private:
     bool initUi();
     bool connectionSignalSlots();

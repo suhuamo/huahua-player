@@ -117,6 +117,7 @@ void Playlist::SlotOnListItemDoubleClicked(QListWidgetItem *item)
 {
     emit SigPlay(item->data(Qt::UserRole).toString());
 
+    ui->List->setCurrentItem(item);
     _current_play_list_index = ui->List->row(item);
 }
 
@@ -154,6 +155,55 @@ void Playlist::SlotOnNextPlay()
 //        更新列表选择状态
         ui->List->setCurrentRow(_current_play_list_index);
     }
+}
+
+void Playlist::OnAddFileAndPlay(QString strFileName)
+{
+    bool supportMovie = strFileName.endsWith(".mkv", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".rmvb", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".mp4", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".avi", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".flv", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".wmv", Qt::CaseInsensitive) ||
+        strFileName.endsWith(".3gp", Qt::CaseInsensitive);
+    if (!supportMovie)
+    {
+        return;
+    }
+
+    QFileInfo fileInfo(strFileName);
+    if(!fileInfo.exists()) {
+        QMessageBox::warning(this, tr("文件不存在"),
+                            tr("文件 \"%1\" 不存在，请检查路径是否正确。").arg(fileInfo.fileName()));
+        qDebug() << "文件不存在:" << strFileName;
+        return;
+    }
+
+    QString absolutePath = fileInfo.absoluteFilePath();
+
+    //    查找该文件是否已经添加过 - 通过 UserRole 中的完整路径判断唯一性
+    QListWidgetItem *pItem = nullptr;
+    bool isExist = false;
+    for(int i = 0; i < ui->List->count(); i++) {
+        QListWidgetItem *item = ui->List->item(i);
+        QString existingPath = item->data(Qt::UserRole).toString();
+        if(existingPath == absolutePath) {
+            pItem = item;
+            isExist = true;
+            break;
+        }
+    }
+
+    //    如果没有添加过，那么添加到播放列表中
+    if(!isExist) {
+        pItem = new QListWidgetItem(ui->List);
+        pItem->setData(Qt::UserRole, QVariant(absolutePath));  // 用户数据
+        pItem->setText(fileInfo.fileName());  // 显示文本
+        pItem->setToolTip(absolutePath);
+        ui->List->addItem(pItem);
+    }
+
+    SlotOnListItemDoubleClicked(pItem);
 }
 
 void Playlist::dropEvent(QDropEvent *event)

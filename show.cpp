@@ -45,6 +45,26 @@ void Show::OnPlay(QString strFile)
     VideoCtl::GetInstance()->start_play(strFile, ui->label->winId());
 }
 
+void Show::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> urls = event->mimeData()->urls();
+    if(urls.isEmpty()) {
+        return;
+    }
+
+    for(QUrl url: urls) {
+        QString strFileName = url.toLocalFile();
+        emit SigOpenFile(strFileName);
+//        如果拖拽了多个，我们只播放第一个文件，不过这个合理吗？
+        break;
+    }
+}
+
+void Show::dragEnterEvent(QDragEnterEvent *event)
+{
+    event->acceptProposedAction();
+}
+
 bool Show::initUi()
 {
 //    加载qss

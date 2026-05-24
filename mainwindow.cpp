@@ -114,6 +114,8 @@ void MainWindow::connectSignalSlots()
      */
     connect(&m_playlist, &Playlist::SigPlay, ui->ShowWid, &Show::SigPlay);
 
+    connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
+
 //    状态控制栏的按钮功能
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
     connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);

@@ -23,6 +23,7 @@ public:
     void SlotOnListItemDoubleClicked(QListWidgetItem *item);
     void SlotOnBackPlay();
     void SlotOnNextPlay();
+    void OnAddFileAndPlay(QString strFileName);
 protected:
 //    鼠标拖拽放下事件
     void dropEvent(QDropEvent *event);
