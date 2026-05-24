@@ -3,6 +3,7 @@
 #include<globalhelper.h>
 #include"medialist.h"
 #include<QDir>
+#include<QMessageBox>
 
 Playlist::Playlist(QWidget *parent)
     : QWidget(parent),
@@ -34,12 +35,6 @@ bool Playlist::Init()
     }
 
     connectSignalSlots();
-
-//    todo测试:目前测试为了方便，默认设置几个视频文件
-    SlotOnAddFile("C:\\data\\video\\1-4min.mp4");
-    SlotOnAddFile("C:\\data\\video\\2-4min.mp4");
-    SlotOnAddFile("C:\\data\\video\\3-10s.mp4");
-    SlotOnAddFile("C:\\data\\video\\time_counter_1.mp4");
 
 //    清空播放列表，保证现在是干净的
     ui->List->clear();
@@ -75,19 +70,42 @@ void Playlist::connectSignalSlots()
 
 void Playlist::SlotOnAddFile(QString filePath)
 {
+    if(filePath.isEmpty()) {
+        qDebug() << "filePath is empty";
+        return;
+    }
+
     QFileInfo fileInfo(filePath);
-//    查找该文件是否已经添加过
-    QList<QListWidgetItem*>  itemList = ui->List->findItems(fileInfo.fileName(), Qt::MatchExactly);
-//    如果没有添加过，那么添加到播放列表中
-//    todo:不能直接通过这样判断，因为findItem是通过text来判断的，我们确定视频的唯一应该是通过UserRole的Data来确定的
-    if(itemList.isEmpty()) {
+    if(!fileInfo.exists()) {
+        QMessageBox::warning(this, tr("文件不存在"),
+                                  tr("文件 \"%1\" 不存在，请检查路径是否正确。").arg(fileInfo.fileName()));
+        qDebug() << "文件不存在:" << filePath;
+        return;
+    }
+
+    QString absolutePath = fileInfo.absoluteFilePath();
+
+    //    查找该文件是否已经添加过 - 通过 UserRole 中的完整路径判断唯一性
+    bool isExist = false;
+    for(int i = 0; i < ui->List->count(); i++) {
+        QListWidgetItem *item = ui->List->item(i);
+        QString existingPath = item->data(Qt::UserRole).toString();
+        if(existingPath == absolutePath) {
+            isExist = true;
+            break;
+        }
+    }
+
+    //    如果没有添加过，那么添加到播放列表中
+    if(!isExist) {
         QListWidgetItem *p_item = new QListWidgetItem(ui->List);
-        p_item->setData(Qt::UserRole, QVariant(fileInfo.filePath()));// 自定义用户数据，可在其他地方取出来使用
-        p_item->setText(fileInfo.fileName());   // 显示文本
-        p_item->setToolTip(fileInfo.filePath());
+        p_item->setData(Qt::UserRole, QVariant(absolutePath));
+        p_item->setText(fileInfo.fileName());
+        p_item->setToolTip(absolutePath);
         ui->List->addItem(p_item);
     } else {
-//        todo：如果已经添加过，那么将该元素移动到第一位
+        QMessageBox::information(this, tr("重复添加"),
+                                tr("文件 \"%1\" 已经在播放列表中存在。").arg(fileInfo.fileName()));
     }
 
 }
