@@ -25,6 +25,8 @@ public:
     static void SavePlayVolume(double &volume);
 //    从本地文件配置文件获取音量
     static void GetPlayVolume(double& volume);
+    static void SavePlaylist(QStringList& playList);    // 保存播放列表
+    static void GetPlaylist(QStringList& playList);     // 获取播放列表
 private:
     GlobalHelper();
 

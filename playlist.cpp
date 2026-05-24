@@ -14,6 +14,12 @@ Playlist::Playlist(QWidget *parent)
 
 Playlist::~Playlist()
 {
+    QStringList strPlayList;
+    for(int i = 0; i < ui->List->count(); i++) {
+        strPlayList.append(ui->List->item(i)->toolTip());
+    }
+    GlobalHelper::SavePlaylist(strPlayList);
+
     delete ui;
 }
 
@@ -34,6 +40,21 @@ bool Playlist::Init()
     SlotOnAddFile("C:\\data\\video\\2-4min.mp4");
     SlotOnAddFile("C:\\data\\video\\3-10s.mp4");
     SlotOnAddFile("C:\\data\\video\\time_counter_1.mp4");
+
+//    清空播放列表，保证现在是干净的
+    ui->List->clear();
+
+    QStringList strPlayList;
+//    从本地缓存读取文件列表
+    GlobalHelper::GetPlaylist(strPlayList);
+    for(QString videoFile : strPlayList) {
+        SlotOnAddFile(videoFile);
+    }
+//    todo：应该默认选择上一次关闭前的播放文件才对吧
+//    默认选择第一个视频作为默认播放文件
+    if(strPlayList.length() > 0) {
+        ui->List->setCurrentRow(0);
+    }
 
     return true;
 }

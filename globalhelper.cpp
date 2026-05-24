@@ -52,6 +52,38 @@ void GlobalHelper::GetPlayVolume(double& volume)
     volume = settings.value("volume/size", volume).toDouble();
 }
 
+void GlobalHelper::SavePlaylist(QStringList& playList)
+{
+    QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
+    QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
+    // 先移除旧的播放列表数组
+    settings.remove("playlist");
+
+    // 再写入新的播放列表
+    settings.beginWriteArray("playlist");
+    for (int i = 0; i < playList.size(); ++i)
+    {
+        settings.setArrayIndex(i);
+        settings.setValue("movie", playList.at(i));
+    }
+    settings.endArray();
+}
+
+void GlobalHelper::GetPlaylist(QStringList& playList)
+{
+    QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
+    QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
+
+    int size = settings.beginReadArray("playlist");
+    for (int i = 0; i < size; ++i)
+    {
+        settings.setArrayIndex(i);
+        playList.append(settings.value("movie").toString());
+    }
+    settings.endArray();
+}
+
+
 GlobalHelper::GlobalHelper()
 {
 
