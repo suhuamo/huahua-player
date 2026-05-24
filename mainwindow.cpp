@@ -96,6 +96,32 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    qDebug() << "MainWid::keyPressEvent:" << event->key();
+    switch (event->key())
+    {
+    case Qt::Key_Left://后退5s
+        emit SigSeekBack();
+        break;
+    case Qt::Key_Right://前进5s
+        emit SigSeekForward();
+        break;
+    case Qt::Key_Up://增加指定步长音量
+        emit SigAddVolume();
+        break;
+    case Qt::Key_Down://减少指定步长音量
+        emit SigSubVolume();
+        break;
+    case Qt::Key_Space://暂停/恢复播放
+        emit SigPlayOrPause();
+        break;
+
+    default:
+        break;
+    }
+}
+
 //链接信号与槽
 void MainWindow::connectSignalSlots()
 {
@@ -117,6 +143,13 @@ void MainWindow::connectSignalSlots()
 //    图片显示窗口的事件功能，比如拖拽、快捷键按下等
     connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
 
+//    mainwindow 的快捷键功能
+    connect(this, &MainWindow::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
+    connect(this, &MainWindow::SigSeekBack, VideoCtl::GetInstance(), &VideoCtl::OnSeekBack);
+    connect(this, &MainWindow::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
+    connect(this, &MainWindow::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
+    connect(this, &MainWindow::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
+
 //    状态控制栏的按钮功能
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
     connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);
@@ -128,7 +161,7 @@ void MainWindow::connectSignalSlots()
     connect(ui->CtrlBarWid, &CtrlBar::SigPlaySeek, VideoCtl::GetInstance(), &VideoCtl::OnPlaySeek);
 
     /*
-     * 视频播放时，界面相关变化通知
+     * 视频播放时，界面相关变化通知[有的是视频播放后才知道一点一点通知界面的，比如现在的播放时间；有的是快捷键按下直接通知 VideoCtl的，所以 VideCtl 需要反馈给界面]
      * 使用 DirectConnection 是因为需要 signal 任务结束时马上通知 slot 任务，不能扔在队列里面等待，这样会慢不及时。故直接在发送者线程执行这两个方法，相当于直接回调，即 this.signal, receiver.slot
      * 使用 QueuedConnection 是因为双方不在同一个线程，防止出现数据竞争或者崩溃，故直接丢给将当前方法丢给接受者线程执行。相当于观察者模式，在 receiver 线程执行 sender.signal，执行完成后 notify 当前线程执行 slot 方法
      *
@@ -139,6 +172,7 @@ void MainWindow::connectSignalSlots()
     connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, &CtrlBar::OnStopFinished, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoTotalSeconds, ui->CtrlBarWid, &CtrlBar::OnVideoTotalSeconds, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoPlaySeconds, ui->CtrlBarWid, &CtrlBar::OnVideoPlaySeconds, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVideopVolume);
 
 }
 

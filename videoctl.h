@@ -52,6 +52,10 @@ public:
     void OnStop();
     void OnPlayVolume(double percent);
     void OnPlaySeek(double percent);
+    void OnSeekForward();
+    void OnSeekBack();
+    void OnAddVolume();
+    void OnSubVolume();
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
@@ -60,6 +64,7 @@ signals:
     void SigStop();
     void SigVideoTotalSeconds(int seconds);
     void SigVideoPlaySeconds(int seconds);
+    void SigVideoVolume(double percent);
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();

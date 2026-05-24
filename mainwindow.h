@@ -6,9 +6,10 @@
 #include<QMouseEvent>
 #include<QPoint>
 #include<QMenu>
+#include<QShortcut>
+
 #include"playlist.h"
 #include"title.h"
-#include<QShortcut>
 
 
 namespace Ui {
@@ -28,6 +29,8 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+//    键盘事件
+    void keyReleaseEvent(QKeyEvent *event);
 private:
     void connectSignalSlots();
     void SlotOnMinBtnClicked();
@@ -38,6 +41,12 @@ private:
     void SlotOnPlayListCtrlBtnClicked();
 //    初始化菜单，并添加 action 的槽函数
     void initMenu();
+signals:
+    void SigSeekForward();
+    void SigSeekBack();
+    void SigAddVolume();
+    void SigSubVolume();
+    void SigPlayOrPause();
 public:
     Ui::MainWindow *ui;
     Playlist m_playlist;

@@ -2019,6 +2019,42 @@ void VideoCtl::OnPlaySeek(double percent)
     stream_seek(m_cur_stream, ts, 0);
 }
 
+void VideoCtl::OnSeekForward()
+{
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
+    stream_seek_forward();
+}
+
+void VideoCtl::OnSeekBack()
+{
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
+    stream_seek_back();
+}
+
+void VideoCtl::OnAddVolume()
+{
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
+    add_volume();
+}
+
+void VideoCtl::OnSubVolume()
+{
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
+    sub_volume();
+}
+
 void VideoCtl::stream_toggle_pause(VideoState *is) {
     av_log_info("pause state changed, from:'%s' to:'%s'\n", is->paused ? "pause" : "not pause", !is->paused ? "pause" : "not pause");
     // 如果刚刚处于暂停状态，那么现在就需要恢复播放
@@ -2227,10 +2263,17 @@ void VideoCtl::update_volume(int sign, double step) {
      * new_volume：分贝值增减后转换为线性音量，即最终给SDL播放的声音大小值
      * 最后的 av_clip: 防止在极小音量时因精度问题导致无法调节，如果计算前后值相同，则直接加减1。
      */
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
     double volume_level = m_cur_stream->audio_volume ? (20 * log(m_cur_stream->audio_volume / (double)SDL_MIX_MAXVOLUME) / log(10)) : -1000.0;
     int new_volume = lrint(SDL_MIX_MAXVOLUME * pow(10.0, (volume_level + sign * step) / 20.0));
     av_log_info("volume changed, from:%d to %d\n", m_cur_stream->audio_volume, av_clip(m_cur_stream->audio_volume == new_volume ? (m_cur_stream->audio_volume + sign) : new_volume, 0, SDL_MIX_MAXVOLUME));
     m_cur_stream->audio_volume = av_clip(m_cur_stream->audio_volume == new_volume ? (m_cur_stream->audio_volume + sign) : new_volume, 0, SDL_MIX_MAXVOLUME);
+
+    m_startup_volume = m_cur_stream->audio_volume;
+    emit SigVideoVolume(m_cur_stream->audio_volume * 1.0 / SDL_MIX_MAXVOLUME);
 }
 
 // 按照固定步长来增加音量
