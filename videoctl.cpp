@@ -764,6 +764,12 @@ void sdl_audio_callback(void *opaque, Uint8 *stream, int len) {
                 }
                 nb_samples = sonicSamplesAvailable(videoCtl->m_audio_speed_convert);
                 out_size = nb_samples * av_get_bytes_per_sample(is->audio_tgt.fmt) * is->audio_tgt.channels;
+                // 为 audio_buf1 分配足够的内存空间
+                av_fast_malloc(&is->audio_buf1, &is->audio_buf1_size, out_size);
+                if (!is->audio_buf1) {
+                    av_log_error("Failed to allocate audio_buf1 for sonic processing\n");
+                    continue;
+                }
                 // 如果将原始的音频数据 audio_buf 写入 sonic 失败，那么也就不需要从 sonic 读取处理后的音频数据了 —— 毕竟已经失败了
                 if (ret) {
                     if (is->audio_tgt.fmt == AV_SAMPLE_FMT_FLT) {
