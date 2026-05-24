@@ -69,8 +69,6 @@ bool Title::initUi()
     GlobalHelper::SetIcon(ui->MaxBtn, 9, QChar(0xf2d0));
     GlobalHelper::SetIcon(ui->FullScreenBtn, 9, QChar(0xf065));
     GlobalHelper::SetIcon(ui->CloseBtn, 9, QChar(0xf00d));
-//    todo：测试显示
-    ui->MovieNameLab->setText("视频名称测试");
 
     return true;
 }

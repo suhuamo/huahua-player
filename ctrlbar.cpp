@@ -156,9 +156,7 @@ void CtrlBar::OnVideoPlaySeconds(int seconds)
     tss = seconds % 60;
     QTime totalTime(thh, tmm, tss);
     ui->VideoPlayTimeTimeEdit->setTime(totalTime);
-    static int index = 0;
-    qDebug() << "OnVideoPlaySeconds index: " << index++ << " seconds:" << seconds;
-//    qDebug() << "OnVideoPlaySeconds: " << seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE;
+
     if(seconds >= 0) {
         ui->PlaySlider->setValue(seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE);
     }
