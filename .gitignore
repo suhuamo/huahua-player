@@ -5,3 +5,6 @@ build
 
 #IDEA
 .idea/
+
+#VSCode
+.vscode/
