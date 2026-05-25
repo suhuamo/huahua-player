@@ -128,6 +128,10 @@ void CtrlBar::OnVideopVolume(double percent)
     }
     GlobalHelper::SavePlayVolume(percent);
 
+    // 显示音量提示
+    int volumePercent = static_cast<int>(percent * 100);
+    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
+
 }
 
 void CtrlBar::OnVideoTotalSeconds(int seconds)
@@ -166,6 +170,18 @@ void CtrlBar::OnPlaySliderValueChanged()
 {
     double percent = ui->PlaySlider->value() * 1.0 / ui->PlaySlider->maximum();
     emit SigPlaySeek(percent);
+    
+    // 计算跳转的时间
+    int seconds = static_cast<int>(percent * m_total_play_seconds);
+    int thh = seconds / 3600;
+    int tmm = (seconds % 3600) / 60;
+    int tss = seconds % 60;
+    QString timeStr = QString("%1:%2:%3")
+        .arg(thh, 2, 10, QChar('0'))
+        .arg(tmm, 2, 10, QChar('0'))
+        .arg(tss, 2, 10, QChar('0'));
+    
+    emit SigShowToast(QString("跳转到 %1").arg(timeStr));
 }
 
 void CtrlBar::SlotOnVolumeBtnClicked()
@@ -177,12 +193,16 @@ void CtrlBar::SlotOnVolumeBtnClicked()
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
         ui->VolumeBtn->setToolTip("点击恢复音量");
         emit SigPlayVolume(0);
+        emit SigShowToast("声音: 0%");
     } else {
 //        恢复之前的音量百分比
         ui->VolumeSlider->setValue(_last_volume_percent * MAX_SLIDER_VALUE);
         GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
         ui->VolumeBtn->setToolTip("点击静音");
         emit SigPlayVolume(_last_volume_percent);
+        
+        int volumePercent = static_cast<int>(_last_volume_percent * 100);
+        emit SigShowToast(QString("声音: %1%").arg(volumePercent));
     }
 }
 
@@ -192,6 +212,10 @@ void CtrlBar::OnVolumeSliderValueChanged()
     emit SigPlayVolume(percent);
 
     OnVideopVolume(percent);
+    
+    // 显示音量提示
+    int volumePercent = static_cast<int>(percent * 100);
+    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
 }
 
 void CtrlBar::on_SpeedBtn_clicked()
@@ -208,4 +232,39 @@ void CtrlBar::on_PlayOrPauseBtn_clicked()
 void CtrlBar::on_OverPlayBtn_clicked()
 {
     emit SigStop();
+}
+
+// 快捷键：快进
+void CtrlBar::OnSeekForward(int targetSeconds)
+{
+    int hours = targetSeconds / 3600;
+    int minutes = (targetSeconds % 3600) / 60;
+    int seconds = targetSeconds % 60;
+    emit SigShowToast(QString("快进: %1:%2:%3")
+        .arg(hours, 2, 10, QChar('0'))
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0')));
+}
+
+// 快捷键：快退
+void CtrlBar::OnSeekBack(int targetSeconds)
+{
+    int hours = targetSeconds / 3600;
+    int minutes = (targetSeconds % 3600) / 60;
+    int seconds = targetSeconds % 60;
+    emit SigShowToast(QString("快退: %1:%2:%3")
+        .arg(hours, 2, 10, QChar('0'))
+        .arg(minutes, 2, 10, QChar('0'))
+        .arg(seconds, 2, 10, QChar('0')));
+}
+
+// 快捷键：音量变化
+void CtrlBar::OnVolumeChanged(double percent)
+{
+    // 更新 UI
+    OnVideopVolume(percent);
+    
+    // 显示音量提示
+    int volumePercent = static_cast<int>(percent * 100);
+    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
 }

@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QtMath>
 #include <QMutex>
+#include <QPropertyAnimation>
+#include <QGraphicsOpacityEffect>
 
 extern QMutex g_show_rect_mutex;
 
@@ -24,7 +26,14 @@ Show::Show(QWidget *parent) :
 
     m_nLastFrameWidth = 0;
     m_nLastFrameHeight = 0;
-
+    
+    // 初始化提示标签（使用顶层窗口实现透明效果）
+    m_toastLabel = new QLabel(this);
+    m_toastLabel->setVisible(false);
+    
+    // 初始化定时器
+    m_toastTimer = new QTimer(this);
+    m_toastTimer->setSingleShot(true);
 }
 
 Show::~Show()
@@ -85,15 +94,34 @@ bool Show::initUi()
     ui->label->setScaledContents(true);
 #endif
 
-     return true;
+    // 设置样式 - 只设置文字颜色
+    m_toastLabel->setStyleSheet(
+        "QLabel {"
+        "    color: #4169E1;"
+        "    border: none;"
+        "}"
+    );
+    
+    // ⭐ 关键：设置为顶层窗口，避免继承父控件的样式表和背景
+    m_toastLabel->setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
+    m_toastLabel->setAttribute(Qt::WA_TranslucentBackground, true);
+
+    
+    // 设置字体
+    QFont font = m_toastLabel->font();
+    font.setPointSize(14);
+    m_toastLabel->setFont(font);
+
+    return true;
 }
 
 bool Show::connectionSignalSlots()
 {
-    bool bRet;
+    bool bRet = true;
 
 //    todo:这是何意为？为什么自己链接自己，为什么外面连接 &Show::SigPlay 的时候不直接连接 &Show::OnPlay 得了
     bRet = connect(this, &Show::SigPlay, this, &Show::OnPlay);
+    connect(m_toastTimer, &QTimer::timeout, this, &Show::OnToastTimeout);
 
     return bRet;
 }
@@ -101,12 +129,12 @@ bool Show::connectionSignalSlots()
 void Show::OnFrameDimensionsChanged(int nFrameWidth, int nFrameHeight)
 {
     qDebug() << "Show::OnFrameDimensionsChanged" << nFrameWidth << nFrameHeight;
-    
+
     // Only update if dimensions actually changed
     if (m_nLastFrameWidth == nFrameWidth && m_nLastFrameHeight == nFrameHeight) {
         return;
     }
-    
+
     m_nLastFrameWidth = nFrameWidth;
     m_nLastFrameHeight = nFrameHeight;
 
@@ -148,4 +176,38 @@ void Show::resizeEvent(QResizeEvent *event)
 {
     Q_UNUSED(event);
     ChangeShow();
+}
+
+void Show::ShowToast(const QString &text)
+{
+    if (m_toastLabel == nullptr) {
+        return;
+    }
+
+    // 设置文本
+    m_toastLabel->setText(text);
+
+    // 根据文本长度调整大小，添加一些边距
+    QFontMetrics fm(m_toastLabel->font());
+    m_toastLabel->setFixedSize(fm.width(text) + 30, fm.height() + 16);  // 左右各15px，上下各8px的边距
+
+    // ⭐ 关键：对于顶层窗口，需要计算全局位置并调用 show()
+    // 将局部坐标转换为全局坐标
+    QPoint globalPos = this->mapToGlobal(QPoint(10, 10));
+    m_toastLabel->move(globalPos);
+    
+    // 显示标签并确保在最上层
+    m_toastLabel->show();
+    m_toastLabel->raise();
+    m_toastLabel->activateWindow();
+
+    // 启动定时器，2秒后隐藏
+    m_toastTimer->start(2000);
+}
+
+void Show::OnToastTimeout()
+{
+    if (m_toastLabel) {
+        m_toastLabel->hide();  // 顶层窗口使用 hide()
+    }
 }

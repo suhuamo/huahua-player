@@ -66,6 +66,8 @@ signals:
     void SigVideoPlaySeconds(int seconds);
     void SigVideoVolume(double percent);
     void SigFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
+    void SigSeekForwardCompleted(int targetSeconds);  // 快进完成
+    void SigSeekBackCompleted(int targetSeconds);     // 快退完成
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();

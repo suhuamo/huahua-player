@@ -1992,7 +1992,13 @@ void VideoCtl::OnSeekForward()
     {
         return;
     }
+    
+    double current_time = get_master_clock(m_cur_stream);
+    int target_seconds = (int)(current_time + SEEK_INCR);
     stream_seek_forward();
+    
+    // 发出快进完成信号
+    emit SigSeekForwardCompleted(target_seconds);
 }
 
 void VideoCtl::OnSeekBack()
@@ -2001,7 +2007,14 @@ void VideoCtl::OnSeekBack()
     {
         return;
     }
+    
+    double current_time = get_master_clock(m_cur_stream);
+    int target_seconds = (int)(current_time - SEEK_INCR);
+    if (target_seconds < 0) target_seconds = 0;
     stream_seek_back();
+    
+    // 发出快退完成信号
+    emit SigSeekBackCompleted(target_seconds);
 }
 
 void VideoCtl::OnAddVolume()

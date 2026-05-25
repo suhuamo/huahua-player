@@ -22,6 +22,11 @@ public:
     void OnVideoTotalSeconds(int seconds);
     void OnVideoPlaySeconds(int seconds);
     void OnPlaySliderValueChanged();
+    
+    // 快捷键触发的 Toast 提示
+    void OnSeekForward(int targetSeconds);
+    void OnSeekBack(int targetSeconds);
+    void OnVolumeChanged(double percent);  // 快捷键音量变化
 private:
     bool initUi();
     void connectSignalSlots();
@@ -36,6 +41,7 @@ signals:
     void SigStop();
     void SigPlayVolume(double percent);
     void SigPlaySeek(double percent);
+    void SigShowToast(const QString &text);  // 显示提示信息的信号
 private slots:
     void on_SpeedBtn_clicked();
 

@@ -157,6 +157,10 @@ void MainWindow::connectSignalSlots()
     connect(this, &MainWindow::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
     connect(this, &MainWindow::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
     connect(this, &MainWindow::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
+    
+    // 快捷键操作后显示 Toast（通过 VideoCtl 的状态信号）
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekForwardCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekForward);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekBackCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekBack);
 
 //    状态控制栏的按钮功能
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
@@ -167,6 +171,7 @@ void MainWindow::connectSignalSlots()
     connect(ui->CtrlBarWid, &CtrlBar::SigStop, VideoCtl::GetInstance(), &VideoCtl::OnStop);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayVolume, VideoCtl::GetInstance(), &VideoCtl::OnPlayVolume);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlaySeek, VideoCtl::GetInstance(), &VideoCtl::OnPlaySeek);
+    connect(ui->CtrlBarWid, &CtrlBar::SigShowToast, ui->ShowWid, &Show::ShowToast);
 
     /*
      * 视频播放时，界面相关变化通知
@@ -183,7 +188,7 @@ void MainWindow::connectSignalSlots()
     connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, &CtrlBar::OnStopFinished, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoTotalSeconds, ui->CtrlBarWid, &CtrlBar::OnVideoTotalSeconds, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoPlaySeconds, ui->CtrlBarWid, &CtrlBar::OnVideoPlaySeconds, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVideopVolume);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVolumeChanged);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigFrameDimensionsChanged, ui->ShowWid, &Show::OnFrameDimensionsChanged, Qt::QueuedConnection);
 
 }
