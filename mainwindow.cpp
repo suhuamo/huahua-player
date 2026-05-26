@@ -219,6 +219,8 @@ void MainWindow::SlotOnFullScreenBtnClicked()
         if(act_exit_full_screen) {
             act_exit_full_screen->setEnabled(false);
         }
+        // 退出全屏时立即隐藏快捷键提示
+        ui->ShowWid->HideShortcutHint();
     } else {
         //脱离父窗口后才能设置为全屏
         ui->ShowWid->setWindowFlags(Qt::Window);
@@ -227,7 +229,8 @@ void MainWindow::SlotOnFullScreenBtnClicked()
         if(act_exit_full_screen) {
             act_exit_full_screen->setEnabled(true);
         }
-//        todo: 全屏后在正上方显示一行提示：按下 ESC/F11 即可退出全屏
+        // 全屏后显示快捷键提示（居中显示）
+        ui->ShowWid->ShowShortcutHint(tr("按下 ESC/F11 即可退出全屏"));
     }
 //    让当前窗口获取焦点
     this->setFocus();

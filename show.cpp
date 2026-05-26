@@ -34,6 +34,14 @@ Show::Show(QWidget *parent) :
     // 初始化定时器
     m_toastTimer = new QTimer(this);
     m_toastTimer->setSingleShot(true);
+    
+    // 初始化快捷键提示标签（居中显示）
+    m_shortcutHintLabel = new QLabel(this);
+    m_shortcutHintLabel->setVisible(false);
+    
+    // 初始化快捷键提示定时器
+    m_shortcutHintTimer = new QTimer(this);
+    m_shortcutHintTimer->setSingleShot(true);
 }
 
 Show::~Show()
@@ -111,6 +119,21 @@ bool Show::initUi()
     QFont font = m_toastLabel->font();
     font.setPointSize(14);
     m_toastLabel->setFont(font);
+    
+    // 设置快捷键提示标签样式（居中显示）
+    m_shortcutHintLabel->setStyleSheet(
+        "QLabel {"
+        "    color: #4169E1;"
+        "    border: none;"
+        "}"
+    );
+    
+    // 设置为顶层窗口，避免继承父控件的样式表和背景
+    m_shortcutHintLabel->setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
+    m_shortcutHintLabel->setAttribute(Qt::WA_TranslucentBackground, true);
+    
+    // 设置字体
+    m_shortcutHintLabel->setFont(font);
 
     return true;
 }
@@ -122,6 +145,7 @@ bool Show::connectionSignalSlots()
 //    todo:这是何意为？为什么自己链接自己，为什么外面连接 &Show::SigPlay 的时候不直接连接 &Show::OnPlay 得了
     bRet = connect(this, &Show::SigPlay, this, &Show::OnPlay);
     connect(m_toastTimer, &QTimer::timeout, this, &Show::OnToastTimeout);
+    connect(m_shortcutHintTimer, &QTimer::timeout, this, &Show::OnShortcutHintTimeout);
 
     return bRet;
 }
@@ -192,7 +216,7 @@ void Show::ShowToast(const QString &text)
     m_toastLabel->setFixedSize(fm.width(text) + 30, fm.height() + 16);  // 左右各15px，上下各8px的边距
 
     // ⭐ 关键：对于顶层窗口，需要计算全局位置并调用 show()
-    // 将局部坐标转换为全局坐标
+    // 将局部坐标转换为全局坐标（左上角位置）
     QPoint globalPos = this->mapToGlobal(QPoint(10, 10));
     m_toastLabel->move(globalPos);
     
@@ -209,5 +233,48 @@ void Show::OnToastTimeout()
 {
     if (m_toastLabel) {
         m_toastLabel->hide();  // 顶层窗口使用 hide()
+    }
+}
+
+void Show::ShowShortcutHint(const QString &text)
+{
+    if (m_shortcutHintLabel == nullptr) {
+        return;
+    }
+
+    // 设置文本
+    m_shortcutHintLabel->setText(text);
+
+    // 根据文本长度调整大小，添加一些边距
+    QFontMetrics fm(m_shortcutHintLabel->font());
+    m_shortcutHintLabel->setFixedSize(fm.width(text) + 30, fm.height() + 16);  // 左右各15px，上下各8px的边距
+
+    // 将文本显示在窗口正上方居中位置（距离顶部30px）
+    int x = (this->width() - m_shortcutHintLabel->width()) / 2;
+    int y = 30; // 距离顶部30px
+    QPoint globalPos = this->mapToGlobal(QPoint(x, y));
+    m_shortcutHintLabel->move(globalPos);
+    
+    // 显示标签并确保在最上层
+    m_shortcutHintLabel->show();
+    m_shortcutHintLabel->raise();
+    m_shortcutHintLabel->activateWindow();
+
+    // 启动定时器，2秒后隐藏
+    m_shortcutHintTimer->start(2000);
+}
+
+void Show::HideShortcutHint()
+{
+    if (m_shortcutHintLabel) {
+        m_shortcutHintLabel->hide();
+        m_shortcutHintTimer->stop(); // 停止定时器
+    }
+}
+
+void Show::OnShortcutHintTimeout()
+{
+    if (m_shortcutHintLabel) {
+        m_shortcutHintLabel->hide();
     }
 }
