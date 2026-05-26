@@ -220,10 +220,10 @@ void Show::ShowToast(const QString &text)
     QPoint globalPos = this->mapToGlobal(QPoint(10, 10));
     m_toastLabel->move(globalPos);
     
-    // 显示标签并确保在最上层
+    // 显示标签并确保在最上层，但不获取焦点（避免影响键盘事件）
     m_toastLabel->show();
     m_toastLabel->raise();
-    m_toastLabel->activateWindow();
+    // 注意：不调用 activateWindow()，避免焦点转移
 
     // 启动定时器，2秒后隐藏
     m_toastTimer->start(2000);
@@ -255,10 +255,10 @@ void Show::ShowShortcutHint(const QString &text)
     QPoint globalPos = this->mapToGlobal(QPoint(x, y));
     m_shortcutHintLabel->move(globalPos);
     
-    // 显示标签并确保在最上层
+    // 显示标签并确保在最上层，但不获取焦点（避免影响键盘事件）
     m_shortcutHintLabel->show();
     m_shortcutHintLabel->raise();
-    m_shortcutHintLabel->activateWindow();
+    // 注意：不调用 activateWindow()，避免焦点转移
 
     // 启动定时器，2秒后隐藏
     m_shortcutHintTimer->start(2000);
