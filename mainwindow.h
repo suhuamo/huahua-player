@@ -55,7 +55,7 @@ private:
     bool m_move_drag; //移动窗口标志
     QPoint m_drag_position; //在哪个位置开始移动
     QMenu m_menu;    //菜单，不是通过.ui文件加载的，而是代码里面直接渲染的
-    QShortcut* m_esc_shortcut_showWid; // 用于ESC退出全屏的快捷键
+    QAction* act_exit_full_screen; //用于ESC退出全屏的快捷键（全局快捷键，仅全屏时生效）
 };
 
 #endif // MAINWINDOW_H

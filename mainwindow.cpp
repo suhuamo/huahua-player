@@ -18,7 +18,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_playlist(this),
     m_move_drag(false),
-    m_menu(this)
+    m_menu(this),
+    act_exit_full_screen(nullptr)
 {
     ui->setupUi(this);
     /*
@@ -215,16 +216,16 @@ void MainWindow::SlotOnFullScreenBtnClicked()
         ui->ShowWid->setWindowFlags(Qt::SubWindow);
         ui->ShowWid->showNormal();
         // 退出全屏后禁用ESC快捷键
-       if(m_esc_shortcut_showWid) {
-           m_esc_shortcut_showWid->setEnabled(false);
-       }
+        if(act_exit_full_screen) {
+            act_exit_full_screen->setEnabled(false);
+        }
     } else {
         //脱离父窗口后才能设置为全屏
         ui->ShowWid->setWindowFlags(Qt::Window);
         ui->ShowWid->showFullScreen();
         // 进入全屏后启用ESC快捷键
-        if(m_esc_shortcut_showWid) {
-            m_esc_shortcut_showWid->setEnabled(true);
+        if(act_exit_full_screen) {
+            act_exit_full_screen->setEnabled(true);
         }
 //        todo: 全屏后在正上方显示一行提示：按下 ESC/F11 即可退出全屏
     }
@@ -260,6 +261,10 @@ void MainWindow::initMenu()
     QAction* act_open_file = open_menu->addAction(tr("打开文件 \t Ctrl + F"));
     QAction* act_open_stream = open_menu->addAction(tr("打开视频流 \t Ctrl + L"));
     QAction* act_full_screen = m_menu.addAction(tr("全屏/取消全屏 \t F11"));
+
+//    创建退出全屏的action（不添加到菜单，仅用于快捷键）
+    act_exit_full_screen = new QAction(tr("退出全屏 \t Esc"), this);
+
 //    添加槽函数
     connect(act_about, &QAction::triggered, this, []() {
         qDebug() << "关于 \t Ctrl + A 被触发";
@@ -274,25 +279,29 @@ void MainWindow::initMenu()
         qDebug() << "全屏/取消全屏 \t F11 被触发";
         this->SlotOnFullScreenBtnClicked();
     });
+    connect(act_exit_full_screen, &QAction::triggered, this, [this]() {
+        qDebug() << "取消全屏 \t Esc 被触发";
+        this->SlotOnFullScreenBtnClicked();
+    });
 
     // 添加快捷键(由于QMenu没有焦点，故只能再次添加到当前窗口上)
     act_about->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_A));
     act_open_file->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F));
     act_open_stream->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));
     act_full_screen->setShortcut(QKeySequence(Qt::Key_F11));
+    act_exit_full_screen->setShortcut(QKeySequence(Qt::Key_Escape));
 
     // 将全屏这个行为设置为应用全局有效
     act_full_screen->setShortcutContext(Qt::ApplicationShortcut); // 因为全屏的时候焦点是在show的Lable上，不在当前窗口上，那么当前窗口的快捷键就无法生效了
+    act_exit_full_screen->setShortcutContext(Qt::ApplicationShortcut);
+
+    // 初始时禁用ESC快捷键，只在全屏时生效
+    act_exit_full_screen->setEnabled(false);
 
     // 把action添加到当前窗口上
     this->addAction(act_about);
     this->addAction(act_open_file);
     this->addAction(act_open_stream);
     this->addAction(act_full_screen);
-
-    // 创建 ShowWid 的 ESC 快捷键，初始时不启用
-    m_esc_shortcut_showWid = new QShortcut(QKeySequence(Qt::Key_Escape), ui->ShowWid); // 除了像上面的 act_full_screen 直接设置为全局快捷键，还可以像这样直接指定给 ShowWid 设置快捷键
-    m_esc_shortcut_showWid->setEnabled(false); // 初始禁用
-    connect(m_esc_shortcut_showWid, &QShortcut::activated, this, SlotOnFullScreenBtnClicked);
-
+    this->addAction(act_exit_full_screen);
 }
