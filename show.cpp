@@ -281,6 +281,12 @@ void Show::OnShortcutHintTimeout()
 
 void Show::keyReleaseEvent(QKeyEvent *event)
 {
+    // 只有在全屏状态下才处理键盘事件--如果逻辑控制没问题的话，是不需要加这一行判断的，如果出现问题了，可以把这个打开
+//    if (!isFullScreen()) {
+//        QWidget::keyReleaseEvent(event);
+//        return;
+//    }
+    
     int key = event->key();
     
     // 使用全局工具函数获取按键名称
