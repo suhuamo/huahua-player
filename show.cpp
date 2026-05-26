@@ -123,7 +123,7 @@ bool Show::initUi()
     // 设置快捷键提示标签样式（居中显示）
     m_shortcutHintLabel->setStyleSheet(
         "QLabel {"
-        "    color: #4169E1;"
+        "    color: #1cdb20;"
         "    border: none;"
         "}"
     );
