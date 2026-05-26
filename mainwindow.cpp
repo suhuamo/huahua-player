@@ -105,9 +105,49 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
+QString getKeyName(int key)
+{
+    switch (key) {
+    case Qt::Key_Space: return "Space";
+    case Qt::Key_Escape: return "ESC";
+    case Qt::Key_F1: return "F1";
+    case Qt::Key_F2: return "F2";
+    case Qt::Key_F3: return "F3";
+    case Qt::Key_F4: return "F4";
+    case Qt::Key_F5: return "F5";
+    case Qt::Key_F6: return "F6";
+    case Qt::Key_F7: return "F7";
+    case Qt::Key_F8: return "F8";
+    case Qt::Key_F9: return "F9";
+    case Qt::Key_F10: return "F10";
+    case Qt::Key_F11: return "F11";
+    case Qt::Key_F12: return "F12";
+    case Qt::Key_Left: return "Left";
+    case Qt::Key_Right: return "Right";
+    case Qt::Key_Up: return "Up";
+    case Qt::Key_Down: return "Down";
+    case Qt::Key_Enter: return "Enter";
+    case Qt::Key_Return: return "Return";
+    case Qt::Key_Tab: return "Tab";
+    case Qt::Key_Backspace: return "Backspace";
+    case Qt::Key_Delete: return "Delete";
+    case Qt::Key_Home: return "Home";
+    case Qt::Key_End: return "End";
+    case Qt::Key_PageUp: return "PageUp";
+    case Qt::Key_PageDown: return "PageDown";
+    default:
+        if (key >= Qt::Key_A && key <= Qt::Key_Z) {
+            return QString(QChar('A' + key - Qt::Key_A));
+        } else if (key >= Qt::Key_0 && key <= Qt::Key_9) {
+            return QString(QChar('0' + key - Qt::Key_0));
+        }
+        return QString::number(key);
+    }
+}
+
 void MainWindow::keyReleaseEvent(QKeyEvent *event)
 {
-    qDebug() << "MainWid::keyPressEvent:" << event->key();
+    qDebug() << "MainWid::keyPressEvent:" << getKeyName(event->key());
     switch (event->key())
     {
     case Qt::Key_Left://后退5s
