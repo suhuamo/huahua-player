@@ -45,6 +45,7 @@ signals:
     void SigSeekForward();
     void SigAddVolume();
     void SigSubVolume();
+    void SigStep(); // 逐帧播放
 private slots:
     void OnToastTimeout();
     void OnShortcutHintTimeout();

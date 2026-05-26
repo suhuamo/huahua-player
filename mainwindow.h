@@ -47,6 +47,7 @@ signals:
     void SigAddVolume();
     void SigSubVolume();
     void SigPlayOrPause();
+    void SigStep(); // 逐帧播放
 public:
     Ui::MainWindow *ui;
     Playlist m_playlist;

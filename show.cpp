@@ -314,6 +314,9 @@ void Show::keyReleaseEvent(QKeyEvent *event)
         case Qt::Key_Down:
             emit SigSubVolume();
             break;
+        case Qt::Key_S:
+            emit SigStep();
+            break;
         default:
             break;
     }

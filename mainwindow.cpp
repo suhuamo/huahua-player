@@ -164,6 +164,9 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
     case Qt::Key_Space://暂停/恢复播放
         emit SigPlayOrPause();
         break;
+    case Qt::Key_S://逐帧播放
+        emit SigStep();
+        break;
 
     default:
         break;
@@ -192,12 +195,13 @@ void MainWindow::connectSignalSlots()
     connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
     
     // Show窗口的键盘事件处理（全屏时生效）--因为全屏后，show变成了顶层窗口，mainwindow 快捷键就无法生效了，只能给 show 又添加一次一模一样的快捷键事件。
+    connect(ui->ShowWid, &Show::SigExitFullScreen, this, &MainWindow::SlotOnFullScreenBtnClicked);
     connect(ui->ShowWid, &Show::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
     connect(ui->ShowWid, &Show::SigSeekBack, VideoCtl::GetInstance(), &VideoCtl::OnSeekBack);
     connect(ui->ShowWid, &Show::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
     connect(ui->ShowWid, &Show::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
     connect(ui->ShowWid, &Show::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
-    connect(ui->ShowWid, &Show::SigExitFullScreen, this, &MainWindow::SlotOnFullScreenBtnClicked);
+    connect(ui->ShowWid, &Show::SigStep, VideoCtl::GetInstance(), &VideoCtl::OnStep);
 
 //    mainwindow 的快捷键功能
     connect(this, &MainWindow::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
@@ -205,6 +209,7 @@ void MainWindow::connectSignalSlots()
     connect(this, &MainWindow::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
     connect(this, &MainWindow::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
     connect(this, &MainWindow::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
+    connect(this, &MainWindow::SigStep, VideoCtl::GetInstance(), &VideoCtl::OnStep);
     
     // 快捷键操作后显示 Toast（通过 VideoCtl 的状态信号）
     connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekForwardCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekForward);

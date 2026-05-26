@@ -56,6 +56,7 @@ public:
     void OnSeekBack();
     void OnAddVolume();
     void OnSubVolume();
+    void OnStep(); // 逐帧播放
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);

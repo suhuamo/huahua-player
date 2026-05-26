@@ -2035,6 +2035,15 @@ void VideoCtl::OnSubVolume()
     sub_volume();
 }
 
+void VideoCtl::OnStep()
+{
+    if (m_cur_stream == nullptr)
+    {
+        return;
+    }
+    step_to_next_frame(m_cur_stream);
+}
+
 void VideoCtl::stream_toggle_pause(VideoState *is) {
     av_log_info("pause state changed, from:'%s' to:'%s'\n", is->paused ? "pause" : "not pause", !is->paused ? "pause" : "not pause");
     // 如果刚刚处于暂停状态，那么现在就需要恢复播放
