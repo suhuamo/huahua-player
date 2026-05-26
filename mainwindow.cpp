@@ -267,8 +267,9 @@ void MainWindow::SlotOnFullScreenBtnClicked()
 //        需要先将当前窗口设置为子窗口，才能取消全屏
         ui->ShowWid->setWindowFlags(Qt::SubWindow);
         ui->ShowWid->showNormal();
-        // 退出全屏时显示 CtrlBar
+        // 退出全屏时显示 CtrlBar、PlaylistWid
         ui->CtrlBarWid->show();
+        ui->PlaylistWid->show();
         // 退出全屏时立即隐藏快捷键提示
         ui->ShowWid->HideShortcutHint();
         // 强制将焦点转移回主窗口
@@ -276,8 +277,9 @@ void MainWindow::SlotOnFullScreenBtnClicked()
         //    让当前窗口获取焦点
         this->setFocus();
     } else {
-        // 全屏前隐藏 CtrlBar，避免它留在旧位置被渲染到视频画面上
+        // 全屏前隐藏 CtrlBar、PlaylistWid，避免它留在旧位置被渲染到视频画面上
         ui->CtrlBarWid->hide();
+        ui->PlaylistWid->hide();
         //脱离父窗口后才能设置为全屏
         ui->ShowWid->setWindowFlags(Qt::Window);
         ui->ShowWid->showFullScreen();
