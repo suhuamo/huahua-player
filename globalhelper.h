@@ -4,6 +4,7 @@
 #include<QString>
 #include<QPushButton>
 #include<QDebug>
+#include<QKeyEvent>
 
 class GlobalHelper
 {
@@ -14,6 +15,13 @@ public:
      * @return
      */
     static QString GetQssStr(QString strQssPath);
+    
+    /**
+     * @brief 将按键代码转换为可读的按键名称
+     * @param key 按键代码
+     * @return 可读的按键名称字符串
+     */
+    static QString GetKeyName(int key);
     /**
      * @brief 为按钮设置图片（通过第三方字库来设置的）
      * @param btn

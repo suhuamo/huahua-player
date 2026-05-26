@@ -30,6 +30,7 @@ protected:
     void dropEvent(QDropEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
     void resizeEvent(QResizeEvent *event);
+    void keyReleaseEvent(QKeyEvent *event); // 键盘事件处理
 private:
     void ChangeShow();
     bool initUi();
@@ -38,6 +39,12 @@ private:
 signals:
     void SigPlay(QString strFile);
     void SigOpenFile(QString strFile);
+    void SigPlayOrPause();
+    void SigExitFullScreen();
+    void SigSeekBack();
+    void SigSeekForward();
+    void SigAddVolume();
+    void SigSubVolume();
 private slots:
     void OnToastTimeout();
     void OnShortcutHintTimeout();
