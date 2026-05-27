@@ -26,6 +26,8 @@ public:
     void ShowToast(const QString &text);
     void ShowShortcutHint(const QString &text); // 全屏快捷键提示（居中显示）
     void HideShortcutHint(); // 强制隐藏快捷键提示
+    QString getCurrentFile();
+    void OnStartPlay(QString filename);
 protected:
     void dropEvent(QDropEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
@@ -54,6 +56,7 @@ private:
 
     int m_nLastFrameWidth;
     int m_nLastFrameHeight;
+    QString m_current_file; // 当前播放的文件路径
     
     QLabel *m_toastLabel;  // 提示标签（使用顶层窗口实现透明，右上角显示）
     QTimer *m_toastTimer;  // 提示定时器

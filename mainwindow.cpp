@@ -162,7 +162,12 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
         emit SigSubVolume();
         break;
     case Qt::Key_Space://暂停/恢复播放
-        emit SigPlayOrPause();
+        if (!VideoCtl::GetInstance()->isPlaying()) {
+            // 如果现在在非播放状态，那么暂停/恢复播放按钮就变成了开启播放视频功能了【播放当前播放结束的视频】
+            emit m_playlist.SigPlay(ui->ShowWid->getCurrentFile());
+        } else {
+            emit SigPlayOrPause();
+        }
         break;
     case Qt::Key_S://逐帧播放
         emit SigStep();
@@ -236,6 +241,7 @@ void MainWindow::connectSignalSlots()
      *
      */
     connect(VideoCtl::GetInstance(), &VideoCtl::SigStartPlay, &m_title, &Title::SlotOnPlay, Qt::DirectConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigStartPlay, ui->ShowWid, &Show::OnStartPlay, Qt::DirectConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigSpeed, ui->CtrlBarWid, &CtrlBar::OnSpeed);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigPauseStat, ui->CtrlBarWid, &CtrlBar::OnPauseStat, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, &CtrlBar::OnStopFinished, Qt::QueuedConnection);

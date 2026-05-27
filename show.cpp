@@ -62,7 +62,11 @@ bool Show::Init()
 
 void Show::OnPlay(QString strFile)
 {
-
+    // 防御性编程
+    if(strFile.isEmpty()) {
+        qDebug() << "Show::OnPlay: strFile is empty";
+        return;
+    }
 //    todo：在这里或者在其他地方必须校验必须是可播放的视频文件，而且当前文件得存在，不能突然被删除了。防止打开失败导致程序崩溃
     VideoCtl::GetInstance()->start_play(strFile, ui->label->winId());
 }
@@ -148,6 +152,14 @@ bool Show::connectionSignalSlots()
     connect(m_shortcutHintTimer, &QTimer::timeout, this, &Show::OnShortcutHintTimeout);
 
     return bRet;
+}
+
+QString Show::getCurrentFile() {
+    return m_current_file;
+}
+
+void Show::OnStartPlay(QString filename) {
+    m_current_file = filename;
 }
 
 void Show::OnFrameDimensionsChanged(int nFrameWidth, int nFrameHeight)
@@ -297,7 +309,12 @@ void Show::keyReleaseEvent(QKeyEvent *event)
     // 发送相应的信号
     switch (key) {
         case Qt::Key_Space:
-            emit SigPlayOrPause();
+            if (!VideoCtl::GetInstance()->isPlaying()) {
+                // 如果现在在非播放状态，那么暂停/恢复播放按钮就变成了开启播放视频功能了【播放当前播放结束的视频】
+                emit SigPlay(m_current_file);
+            } else {
+                emit SigPlayOrPause();
+            }
             break;
         case Qt::Key_Escape:
             emit SigExitFullScreen(); // ESC退出全屏

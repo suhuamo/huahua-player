@@ -47,6 +47,7 @@ public:
     int64_t get_target_frequency();
     int get_target_channels();
     bool is_normal_playback_rate();
+    bool isPlaying();
     void OnSpeed();
     void OnPause();
     void OnStop();
@@ -142,7 +143,6 @@ private:
     float m_playback_rate; //播放速度
     bool m_playback_changed; //播放速度是否改变
     WId m_play_wid;//播放窗口
-    QString m_current_file; //当前播放的文件路径
     bool m_stop_emitted; //标记是否已经发送过停止信号
 public:
     sonicStreamStruct* m_audio_speed_convert;
