@@ -309,12 +309,7 @@ void Show::keyReleaseEvent(QKeyEvent *event)
     // 发送相应的信号
     switch (key) {
         case Qt::Key_Space:
-            if (!VideoCtl::GetInstance()->isPlaying()) {
-                // 如果现在在非播放状态，那么暂停/恢复播放按钮就变成了开启播放视频功能了【播放当前播放结束的视频】
-                emit SigPlay(m_current_file);
-            } else {
-                emit SigPlayOrPause();
-            }
+            emit SigPlayOrPause();
             break;
         case Qt::Key_Escape:
             emit SigExitFullScreen(); // ESC退出全屏

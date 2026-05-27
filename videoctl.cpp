@@ -140,6 +140,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
 
     m_play_wid = play_wid;
     m_stop_emitted = false; // 重置停止标志
+    m_current_file = filename;
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -1932,10 +1933,6 @@ bool VideoCtl::is_normal_playback_rate() {
     }
 }
 
-bool VideoCtl::isPlaying() {
-    return m_cur_stream != nullptr;
-}
-
 void VideoCtl::OnSpeed()
 {
 //    循环倍数变化
@@ -1948,8 +1945,11 @@ void VideoCtl::OnSpeed()
 
 void VideoCtl::OnPause()
 {
-//    没有开启流的时候不要导致程序崩溃
-    if(m_cur_stream == nullptr) {
+    if (m_cur_stream == nullptr) {
+        // 如果现在在非播放状态，那么暂停/恢复播放按钮就变成了开启播放视频功能了【播放当前播放结束的视频】
+        if (!m_current_file.isEmpty()) {
+            start_play(m_current_file, m_play_wid);
+        }
         return;
     }
     toggle_pause(m_cur_stream);
