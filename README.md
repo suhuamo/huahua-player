@@ -208,6 +208,25 @@ huahua-player/
 
 ### Windows (命令行)
 
+**方式一：使用打包脚本（推荐）**
+
+项目提供了 `run.bat` 脚本，可以一键完成编译、部署 DLL 并运行程序：
+
+```bash
+# 双击运行或命令行执行
+.\huahua-player\cmd\run.bat
+```
+
+该脚本会自动：
+1. 创建构建目录（如果不存在）
+2. 运行 `qmake` 生成 Makefile
+3. 运行 `mingw32-make` 编译项目
+4. 复制所有必需的 DLL 文件（Qt、FFmpeg、SDL2）
+5. 复制平台插件
+6. 自动启动程序
+
+**方式二：手动命令行**
+
 ```bash
 # 进入项目目录
 cd huahua-player
