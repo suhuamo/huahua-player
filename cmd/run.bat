@@ -58,24 +58,26 @@ set DEBUG_DIR=%BUILD_DIR%\debug
 
 :: Copy Qt DLLs
 echo   Copying Qt DLLs...
-copy /Y "%QT_BIN%\Qt5Cored.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\Qt5Guid.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\Qt5Widgetsd.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\Qt5Networkd.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\libgcc_s_dw2-1.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\libstdc++-6.dll" "%DEBUG_DIR%\" >nul
-copy /Y "%QT_BIN%\libwinpthread-1.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\Qt5Cored.dll" copy /Y "%QT_BIN%\Qt5Cored.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\Qt5Guid.dll" copy /Y "%QT_BIN%\Qt5Guid.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\Qt5Widgetsd.dll" copy /Y "%QT_BIN%\Qt5Widgetsd.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\Qt5Networkd.dll" copy /Y "%QT_BIN%\Qt5Networkd.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\libgcc_s_dw2-1.dll" copy /Y "%QT_BIN%\libgcc_s_dw2-1.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\libstdc++-6.dll" copy /Y "%QT_BIN%\libstdc++-6.dll" "%DEBUG_DIR%\" >nul
+if not exist "%DEBUG_DIR%\libwinpthread-1.dll" copy /Y "%QT_BIN%\libwinpthread-1.dll" "%DEBUG_DIR%\" >nul
 
 :: Copy project DLLs
 echo   Copying project DLLs...
 if exist "%PROJECT_DIR%\dll\x86" (
-    copy /Y "%PROJECT_DIR%\dll\x86\*.dll" "%DEBUG_DIR%\" >nul 2>&1
+    for %%f in ("%PROJECT_DIR%\dll\x86\*.dll") do (
+        if not exist "%DEBUG_DIR%\%%~nxf" copy /Y "%%f" "%DEBUG_DIR%\" >nul 2>&1
+    )
 )
 
 :: Copy platform plugin
 echo   Copying platform plugin...
 if not exist "%DEBUG_DIR%\platforms" mkdir "%DEBUG_DIR%\platforms"
-copy /Y "%QT_BIN%\..\plugins\platforms\qwindowsd.dll" "%DEBUG_DIR%\platforms\" >nul
+if not exist "%DEBUG_DIR%\platforms\qwindowsd.dll" copy /Y "%QT_BIN%\..\plugins\platforms\qwindowsd.dll" "%DEBUG_DIR%\platforms\" >nul
 
 echo.
 echo ==========================================
