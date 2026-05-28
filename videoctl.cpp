@@ -1542,6 +1542,7 @@ void VideoCtl::loop_thread(VideoState *curStream) {
     double incr, pos, frac;
 
     m_play_loop = true;
+    m_idle_loop = true;  // 在线程启动时设置，若 start_play 已将其置为 false 则空闲循环不会进入
     while (m_play_loop) {
         double x;
         refresh_loop_wait_event(curStream, &event);
@@ -1585,8 +1586,11 @@ void VideoCtl::loop_thread(VideoState *curStream) {
      * 直接监听 SDL 自己的窗口大小改变事件进行重绘，无需 Qt 信号通知。
      * 因为 D3D 渲染器只能在创建它的线程上使用，
      * 所以必须在 loop_thread（即 SDL 线程）上进行渲染，不能从 Qt 主线程直接渲染。
+     *
+     * 注意：m_idle_loop 在线程启动时已设为 true。
+     * 若 start_play 在播放循环期间将其置为 false，此处 while 条件为 false，
+     * 线程直接退出，避免 join() 死锁。
      */
-    m_idle_loop = true;
     while (m_idle_loop) {
         // SDL_WaitEventTimeout 返回 0 表示超时无事件，此时 event 未填充，需跳过处理
         if (!SDL_WaitEventTimeout(&event, 100))
