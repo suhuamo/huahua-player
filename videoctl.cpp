@@ -101,7 +101,12 @@ VideoCtl::VideoCtl(QObject *parent):
     m_playback_changed(false),
     m_audio_speed_convert(nullptr),
     m_stop_emitted(false),
-    m_video_open(false){
+    m_video_open(false),
+    m_vid_texture(nullptr),
+    m_frame_sar({0, 1}),
+    m_frame_flip_v(false),
+    m_last_frame(nullptr),
+    m_idle_loop(false){
 }
 
 bool VideoCtl::init() {
@@ -142,6 +147,32 @@ bool VideoCtl::ConnectionSignalSlots()
 }
 
 VideoCtl::~VideoCtl() {
+    // 停止播放循环
+    m_play_loop = false;
+    // 停止空闲事件循环
+    m_idle_loop = false;
+    // 空闲循环会在 SDL_WaitEventTimeout 的 100ms 超时后检查 m_idle_loop 自然退出
+    if (m_play_loop_thread.joinable()) {
+        m_play_loop_thread.join();
+    }
+
+    // 清理视频纹理
+    if (m_vid_texture) {
+        SDL_DestroyTexture(m_vid_texture);
+        m_vid_texture = nullptr;
+    }
+    // 清理最后一帧引用
+    av_frame_free(&m_last_frame);
+    // 清理渲染器
+    if(m_renderer) {
+        SDL_DestroyRenderer(m_renderer);
+        m_renderer = nullptr;   
+    }
+    // 清理窗口
+    if(m_window) {
+        SDL_DestroyWindow(m_window);
+        m_window = nullptr;
+    }
     //清理日志文件
     fclose(log_file);
     // 清理 SDL
@@ -149,10 +180,17 @@ VideoCtl::~VideoCtl() {
 }
 
 void VideoCtl::start_play(QString filename, WId play_wid) {
+
     m_play_loop = false;
+
+    // 停止空闲事件循环（如果正在运行）
+    m_idle_loop = false;
+    // 空闲循环会在 SDL_WaitEventTimeout 的 100ms 超时后检查 m_idle_loop 自然退出
+
     if (m_play_loop_thread.joinable()) {
         m_play_loop_thread.join();
     }
+
     emit SigStartPlay(filename);
 
     m_play_wid = play_wid;
@@ -1361,7 +1399,56 @@ void VideoCtl::do_exit(VideoState *is) {
         stream_close(is);
         m_cur_stream = nullptr;
     }
-    // 这里不销毁渲染器和窗口，因为播放结束的时候，渲染器和窗口可能还在使用，QT不渲染lable了，只能由我们SDL的这个窗口渲染
+
+    // 销毁旧纹理（渲染器销毁后它也会失效）
+    if (m_vid_texture) {
+        SDL_DestroyTexture(m_vid_texture);
+        m_vid_texture = nullptr;
+    }
+    // 重新创建渲染器和纹理--因为渲染器一定会失效，所以我们直接创建一个新的
+    if (m_window) {
+        SDL_RendererInfo info;
+        /*
+         * 当调用 SDL_AudioClose 后，渲染器可能会失效【这就很扯，SDL_AudioClose 为什么要影响渲染器呢】
+         * mark: 强制销毁一次hhhh
+         */
+        if (m_renderer) {
+            SDL_DestroyRenderer(m_renderer);
+            m_renderer = nullptr;
+        }
+        m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        // 如果创建失败，那么就创建一个普通的渲染器
+        if (!m_renderer) {
+            m_renderer = SDL_CreateRenderer(m_window, -1, 0);
+        }
+        if (m_renderer) {
+            // 可以发现会从 direct3d 变成了 opengl
+            if (!SDL_GetRendererInfo(m_renderer, &info))
+                av_log_info("Initialized %s renderer.\n", info.name);
+
+            // 用 m_last_frame 重新创建纹理（av_frame_ref 保证了帧数据在 stream_close 后仍然有效）
+            if (m_last_frame && m_last_frame->width > 0 && m_last_frame->height > 0) {
+                av_log_info("do_exit: recreating texture from m_last_frame, size=%d x %d, format=%d\n",
+                    m_last_frame->width, m_last_frame->height, m_last_frame->format);
+                int sdlPixFmt = m_last_frame->format == AV_PIX_FMT_YUV420P ? SDL_PIXELFORMAT_YV12 : SDL_PIXELFORMAT_ARGB8888;
+                m_vid_texture = SDL_CreateTexture(m_renderer, sdlPixFmt,
+                    SDL_TEXTUREACCESS_STREAMING, m_last_frame->width, m_last_frame->height);
+                if (m_vid_texture) {
+                    struct SwsContext* sws_ctx = nullptr;
+                    upload_texture(m_vid_texture, m_last_frame, &sws_ctx);
+                    sws_freeContext(sws_ctx);
+                    SDL_SetTextureBlendMode(m_vid_texture, SDL_BLENDMODE_NONE);
+                    av_log_info("do_exit: texture recreated successfully\n");
+                } else {
+                    av_log_error("do_exit: SDL_CreateTexture failed: %s\n", SDL_GetError());
+                }
+            } else {
+                av_log_info("do_exit: no m_last_frame to recreate texture, m_last_frame=%p\n", (void*)m_last_frame);
+            }
+        }
+    }
+
+    // 这里不销毁窗口，因为窗口我们需要一直渲染
     m_video_open = false; // 标记视频窗口已关闭--其实是播放状态的关闭，窗口实际还在使用
     emit SigStopFinished();
 }
@@ -1388,9 +1475,6 @@ void VideoCtl::stream_close(VideoState *is) {
     sws_freeContext(is->img_convert_ctx);
 
     av_free(is->filename);
-
-    if (is->vid_texture)
-        SDL_DestroyTexture(is->vid_texture);
 
     av_free(is);
 }
@@ -1495,6 +1579,51 @@ void VideoCtl::loop_thread(VideoState *curStream) {
     }
 
     do_exit(curStream);
+
+    /*
+     * 空闲事件循环：播放结束后继续保持 SDL 事件循环，
+     * 直接监听 SDL 自己的窗口大小改变事件进行重绘，无需 Qt 信号通知。
+     * 因为 D3D 渲染器只能在创建它的线程上使用，
+     * 所以必须在 loop_thread（即 SDL 线程）上进行渲染，不能从 Qt 主线程直接渲染。
+     */
+    m_idle_loop = true;
+    while (m_idle_loop) {
+        // SDL_WaitEventTimeout 返回 0 表示超时无事件，此时 event 未填充，需跳过处理
+        if (!SDL_WaitEventTimeout(&event, 100))
+            continue;
+        switch (event.type) {
+            case SDL_WINDOWEVENT:
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                        m_screen_width = event.window.data1;
+                        m_screen_height = event.window.data2;
+                        // fall through，resize 和 exposed 都需要重绘
+                    case SDL_WINDOWEVENT_EXPOSED:
+                        if (m_window && m_renderer && g_show_rect_mutex.tryLock()) {
+                            SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+                            SDL_RenderClear(m_renderer);
+                            if (m_vid_texture && m_frame_width > 0 && m_frame_height > 0) {
+                                SDL_Rect rect;
+                                calculate_display_rect(&rect, 0, 0, m_screen_width, m_screen_height,
+                                    m_frame_width, m_frame_height, m_frame_sar);
+                                SDL_RenderCopyEx(m_renderer, m_vid_texture, NULL, &rect, 0, NULL,
+                                    (SDL_RendererFlip)(m_frame_flip_v ? SDL_FLIP_VERTICAL : 0));
+                            }
+                            SDL_RenderPresent(m_renderer);
+                            g_show_rect_mutex.unlock();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case SDL_QUIT:
+                m_idle_loop = false;
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void VideoCtl::refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
@@ -1746,17 +1875,7 @@ void VideoCtl::video_open() {
         SDL_GetWindowSize(m_window, &w, &h);//初始宽高设置为显示控件宽高
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     } else {
-        /*
-         * 其实正常来说不需要这么麻烦，只需要重新 set 一下窗口大小即可，但是为了抵抗 SDL_AudioClose 导致的窗口最小化问题，所以这里做了一些额外的处理
-         * mark: 复用窗口时，必须先 Restore（从最小化恢复），再 Show，再 Raise
-         * SDL_ShowWindow 不会恢复最小化的窗口，必须用 SDL_RestoreWindow
-         * SDL_CloseAudio() 在 Windows + Direct3D + WASAPI 环境下可能导致窗口被最小化
-         */
-        SDL_RestoreWindow(m_window);
         SDL_SetWindowSize(m_window, w, h);
-        SDL_ShowWindow(m_window);
-        SDL_RaiseWindow(m_window);
-        SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     }
 
     if (m_window) {
@@ -1815,14 +1934,24 @@ void VideoCtl::video_image_display(VideoState *is) {
 
     if (!vp->uploaded) {
         int sdlPixFmt = vp->frame->format == AV_PIX_FMT_YUV420P ? SDL_PIXELFORMAT_YV12 : SDL_PIXELFORMAT_ARGB8888;
-        // 创建纹理
-        if (realloc_texture(&is->vid_texture, sdlPixFmt, vp->frame->width, vp->frame->height, SDL_BLENDMODE_NONE, 0) < 0)
+        // 创建纹理（纹理由 VideoCtl 统一管理，不存储在 VideoState 中）
+        if (realloc_texture(&m_vid_texture, sdlPixFmt, vp->frame->width, vp->frame->height, SDL_BLENDMODE_NONE, 0) < 0)
             return;
         // 更新纹理内容
-        if (upload_texture(is->vid_texture, vp->frame, &is->img_convert_ctx) < 0)
+        if (upload_texture(m_vid_texture, vp->frame, &is->img_convert_ctx) < 0)
             return;
         vp->uploaded = 1;
         vp->flip_v = vp->frame->linesize[0] < 0;
+
+        // 保存当前帧的宽高比和翻转信息，用于播放结束后窗口大小改变时重新渲染
+        m_frame_sar = vp->sar;
+        m_frame_flip_v = vp->flip_v;
+
+        // 保存最后一帧的引用，用于播放结束后重建纹理（av_frame_ref 增加引用计数，保持数据有效）
+        if (!m_last_frame)
+            m_last_frame = av_frame_alloc();
+        av_frame_unref(m_last_frame);
+        av_frame_ref(m_last_frame, vp->frame);
 
         if (m_frame_width != vp->frame->width || m_frame_height != vp->frame->height) {
             m_frame_width = vp->frame->width;
@@ -1832,7 +1961,7 @@ void VideoCtl::video_image_display(VideoState *is) {
         }
     }
     /*mark：无论你图片有多大，我 rect 设置了多大，最后图片显示就是多大，即最后 SDL_RenderCopyEx 会帮我们做等比例缩放处理 */
-    SDL_RenderCopyEx(m_renderer, is->vid_texture, NULL, &rect, 0, NULL, (SDL_RendererFlip)(vp->flip_v ? SDL_FLIP_VERTICAL : 0));
+    SDL_RenderCopyEx(m_renderer, m_vid_texture, NULL, &rect, 0, NULL, (SDL_RendererFlip)(vp->flip_v ? SDL_FLIP_VERTICAL : 0));
 }
 
 void VideoCtl::calculate_display_rect(SDL_Rect *rect, int src_x_left, int src_y_top, int src_width, int src_height,
@@ -2334,3 +2463,4 @@ void VideoCtl::sub_speed() {
 void VideoCtl::reset_speed() {
     update_speed(PLAYBACK_RATE_RESET);
 }
+

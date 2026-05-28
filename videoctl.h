@@ -145,6 +145,11 @@ private:
     bool m_stop_emitted; //标记是否已经发送过停止信号
     QString m_current_file; // 当前播放文件路径
     bool m_video_open; // 视频窗口打开状态
+    SDL_Texture* m_vid_texture;       // 视频纹理（由 VideoCtl 统一管理，播放结束后保留用于重新渲染）
+    AVRational m_frame_sar;            // 当前帧的宽高比
+    bool m_frame_flip_v;               // 当前帧是否垂直翻转
+    AVFrame* m_last_frame;             // 最后一帧的引用（播放结束后用于重建纹理，av_frame_ref 保持数据有效）
+    bool m_idle_loop;                   // 空闲事件循环运行标志（true=运行中，类似 m_play_loop）
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };
