@@ -5,6 +5,7 @@
 #ifndef DATACTL_H
 #define DATACTL_H
 
+#define __STDC_CONSTANT_MACROS
 #include <thread>
 
 extern "C"{

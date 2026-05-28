@@ -56,6 +56,14 @@ static int64_t g_audio_callback_time;
 const int SEEK_INCR = 5;
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
+static FILE *log_file = NULL;
+// 自定义日志回调
+static void log_callback(void *ptr, int level, const char *fmt, va_list vl) {
+    if (log_file && level <= av_log_get_level()) {
+        vfprintf(log_file, fmt, vl);
+        fflush(log_file);
+    }
+}
 
 int decode_interrupt_cb(void *ctx) {
     VideoState *is = (VideoState *)ctx;
@@ -104,8 +112,14 @@ bool VideoCtl::init() {
         return false;
     }
 
-    // 设置 FFmpeg 日志级别为 TRACE，以输出最详细的调试信息
+    // 设置日志级别（可选）
     // av_log_set_level(AV_LOG_TRACE);
+    // 打开日志文件
+    log_file = fopen("huahua-player.log", "w");
+    if (!log_file) return -1;
+
+    // 注册回调
+    av_log_set_callback(log_callback);
 
     // 初始化 SDL（视频 + 事件系统）
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
@@ -127,6 +141,8 @@ bool VideoCtl::ConnectionSignalSlots()
 }
 
 VideoCtl::~VideoCtl() {
+    //清理日志文件
+    fclose(log_file);
     // 清理 SDL
     SDL_Quit();
 }
