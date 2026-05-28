@@ -144,6 +144,7 @@ private:
     WId m_play_wid;//播放窗口
     bool m_stop_emitted; //标记是否已经发送过停止信号
     QString m_current_file; // 当前播放文件路径
+    bool m_video_open; // 视频窗口打开状态
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

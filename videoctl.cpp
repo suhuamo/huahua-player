@@ -100,7 +100,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_playback_rate(PLAYBACK_RATE_RESET),
     m_playback_changed(false),
     m_audio_speed_convert(nullptr),
-    m_stop_emitted(false){
+    m_stop_emitted(false),
+    m_video_open(false){
 }
 
 bool VideoCtl::init() {
@@ -163,12 +164,11 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
 
     VideoState *is = stream_open(filename_c);
     if (!is) {
-        av_log_info("Failed to initialize!\n");
+        av_log_error("Failed to initialize!\n");
         do_exit(m_cur_stream);
     }
 
     m_cur_stream = is;
-
     m_play_loop_thread = std::thread(&VideoCtl::loop_thread, this, is);
     return;
 }
@@ -1361,14 +1361,8 @@ void VideoCtl::do_exit(VideoState *is) {
         stream_close(is);
         m_cur_stream = nullptr;
     }
-    if (m_renderer) {
-        SDL_DestroyRenderer(m_renderer);
-        m_renderer = nullptr;
-    }
-    if (m_window) {
-        // SDL_DestroyWindow(m_window);
-        m_window = nullptr;
-    }
+    // 这里不销毁渲染器和窗口，因为播放结束的时候，渲染器和窗口可能还在使用，QT不渲染lable了，只能由我们SDL的这个窗口渲染
+    m_video_open = false; // 标记视频窗口已关闭--其实是播放状态的关闭，窗口实际还在使用
     emit SigStopFinished();
 }
 
@@ -1724,7 +1718,7 @@ void VideoCtl::video_display(VideoState *is) {
     /*
     * mark：SDL相关知识可以查询目录下的SDL文档
     */
-    if (!m_window)
+    if (!m_video_open)
         video_open();
     if (m_renderer) {
         if (g_show_rect_mutex.tryLock()) {
@@ -1751,20 +1745,48 @@ void VideoCtl::video_open() {
         qDebug() << "VideoCtl::video_open - m_window created:" << m_window;
         SDL_GetWindowSize(m_window, &w, &h);//初始宽高设置为显示控件宽高
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-        if (m_window) {
-            SDL_RendererInfo info;
-            if (!m_renderer)
-                m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-            // 如果创建失败，那么就创建一个普通的渲染器
-            if (!m_renderer)
-                m_renderer = SDL_CreateRenderer(m_window, -1, 0);
-            if (m_renderer) {
-                if (!SDL_GetRendererInfo(m_renderer, &info))
-                    av_log_info("Initialized %s renderer.\n", info.name);
+    } else {
+        /*
+         * 其实正常来说不需要这么麻烦，只需要重新 set 一下窗口大小即可，但是为了抵抗 SDL_AudioClose 导致的窗口最小化问题，所以这里做了一些额外的处理
+         * mark: 复用窗口时，必须先 Restore（从最小化恢复），再 Show，再 Raise
+         * SDL_ShowWindow 不会恢复最小化的窗口，必须用 SDL_RestoreWindow
+         * SDL_CloseAudio() 在 Windows + Direct3D + WASAPI 环境下可能导致窗口被最小化
+         */
+        SDL_RestoreWindow(m_window);
+        SDL_SetWindowSize(m_window, w, h);
+        SDL_ShowWindow(m_window);
+        SDL_RaiseWindow(m_window);
+        SDL_SetWindowPosition(m_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    }
+
+    if (m_window) {
+        SDL_RendererInfo info;
+        /*
+         * 当调用 SDL_AudioClose 后，渲染器可能会失效【这就很扯，SDL_AudioClose 为什么要影响渲染器呢】
+         * mark: 复用窗口时，检测旧渲染器是否可用
+         * 用 SDL_RenderClear 做真实检测（探针 CreateTexture 不可靠，D3D 设备丢失只有真正渲染时才暴露）
+         */
+        if (m_renderer) {
+            SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+            int clearRet = SDL_RenderClear(m_renderer);
+            if (clearRet < 0) {
+                av_log_error("SDL_RenderClear error: %s\n", SDL_GetError());
+                SDL_DestroyRenderer(m_renderer);
+                m_renderer = nullptr;
             }
         }
-    } else {
-        SDL_SetWindowSize(m_window, w, h);
+        if (!m_renderer) {
+            m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+            // 如果创建失败，那么就创建一个普通的渲染器
+            if (!m_renderer) {
+                m_renderer = SDL_CreateRenderer(m_window, -1, 0);
+            }
+        }
+        if (m_renderer) {
+            // 可以发现会从 direct3d 变成了 opengl
+            if (!SDL_GetRendererInfo(m_renderer, &info))
+                av_log_info("Initialized %s renderer.\n", info.name);
+        }
     }
 
     if (!m_window || !m_renderer) {
@@ -1774,6 +1796,7 @@ void VideoCtl::video_open() {
 
     m_cur_stream->width = w;
     m_cur_stream->height = h;
+    m_video_open = true;//标记视频窗口已打开，即正在播放视频中
     qDebug() << "VideoCtl::video_open - done, stream size:" << m_cur_stream->width << "x" << m_cur_stream->height;
 }
 
