@@ -1,6 +1,8 @@
 # build Path
 build-huahua-player-Desktop_Qt_5_8_0_MinGW_32bit-*
+# Qt project user file
 flower-player.pro.user
+huahua-player.pro.user
 build
 
 #IDEA
