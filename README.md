@@ -344,6 +344,70 @@ open huahua-player.app
 
 ## 🏗 核心架构
 
+本项目基于 **ffplay** 架构实现播放功能。ffplay 是 FFmpeg 官方提供的参考播放器，其架构设计精巧、经过工业级验证，是学习音视频开发的经典范本。本项目在 ffplay 架构基础上，使用 Qt 替换了原生的 SDL 窗口管理，保留了 ffplay 核心的解码、同步和渲染机制。
+
+### 架构亮点
+
+#### 1. 经典的三线程模型
+
+ffplay 采用经典的「读线程 → 解码线程 → 渲染循环」三线程模型，职责清晰、高效协同：
+
+- **读线程 (read_thread)**：负责解复用，从文件/网络流中读取 AVPacket，按流类型分发到对应的 PacketQueue
+- **解码线程 (audio_thread / video_thread)**：从 PacketQueue 取出 AVPacket 解码为 AVFrame，存入 FrameQueue
+- **渲染循环 (loop_thread)**：以音频为主时钟驱动视频刷新，在 `video_refresh` 中计算帧间隔并调度显示
+
+这种「生产者-消费者」模型使 I/O、解码、渲染三个阶段完全解耦，互不阻塞。
+
+#### 2. 音视频同步（Clock 机制）
+
+音视频同步是播放器最核心也最难的部分，ffplay 的实现堪称教科书级：
+
+- **三种同步策略**：音频主时钟（默认）、视频主时钟、外部时钟，可动态切换
+- **Clock 结构体**：每个流维护独立的时钟，记录 `pts`、`pts_drift`、`speed`，通过漂移补偿实现精确同步
+- **视频帧延迟计算**：`compute_target_delay()` 根据主时钟偏差动态调整视频帧显示延迟，差太多就加速追赶、差太远就丢弃帧
+- **音频同步微调**：`synchronize_audio()` 通过增减音频采样数来微调音频速度，实现亚帧级同步精度
+- **同步阈值设计**：`AV_SYNC_THRESHOLD_MIN`(0.04s) ~ `AV_SYNC_THRESHOLD_MAX`(0.1s) 的自适应窗口，避免过度校正
+
+#### 3. 线程安全的生产者-消费者队列
+
+使用 SDL_mutex + SDL_cond 实现高效的线程安全队列：
+
+- **PacketQueue**：存储未解码的 AVPacket，链表实现，支持阻塞读写、序列号追踪、清空销毁
+- **FrameQueue**：存储解码后的 AVFrame，环形数组实现，预分配固定大小缓存避免运行时内存分配
+- **序列号 (serial) 机制**：每次 seek 操作递增队列序列号，用于识别和丢弃「过时」的数据包，解决 seek 后的数据一致性问题
+
+#### 4. 新版 FFmpeg API 适配 (send_packet / receive_frame)
+
+本项目采用 FFmpeg 新版解码 API（`avcodec_send_packet` + `avcodec_receive_frame`），而非已废弃的旧 API（`avcodec_decode_video2` / `avcodec_decode_audio4`）：
+
+- 解码器内部维护缓冲区，支持异步解码，提升解码效率
+- 通过 `EAGAIN` 返回值精确控制 packet 送入与 frame 取出的节奏
+- 代码中同时保留了两版实现（`#if 0` / `#if 1`），方便对比学习
+
+#### 5. 音频变速不变调 (Sonic 库)
+
+集成 [Sonic](https://github.com/waywardgeek/sonic) 库实现高质量音频变速：
+
+- 使用 WSOLA (Waveform Similarity Overlap-Add) 算法，在变速时保持音调不变
+- 支持 0.25x ~ 3.0x 的播放速度范围
+- 高倍速（≥2x）时采用 Bill Cox 独创的加速算法，质量优于传统 PICOLA
+- 变速时自动调整音频采样参数（采样率、声道数），与 SDL 音频回调无缝衔接
+
+#### 6. SDL 渲染集成
+
+- **纹理管理**：`realloc_texture()` + `upload_texture()` 统一管理 SDL 纹理的创建和更新，支持像素格式自动转换
+- **宽高比适配**：`calculate_display_rect()` 根据视频 SAR (Sample Aspect Ratio) 精确计算显示区域，确保画面不变形
+- **SDL 事件驱动**：利用 `SDL_WINDOWEVENT` 原生事件响应窗口尺寸变化，实现视频画面的实时重绘适配
+
+#### 7. Qt + SDL 混合架构
+
+本项目的一大特色是将 Qt 的 GUI 能力与 SDL 的音视频渲染能力结合：
+
+- **Qt 负责界面**：自定义无边框窗口、QSS 样式、信号槽通信、播放列表等 UI 逻辑
+- **SDL 负责音视频**：音频回调播放、视频纹理渲染，保留 ffplay 的核心渲染管线
+- **SDL 嵌入 Qt 窗口**：通过 `SDL_CreateWindowFrom()` 将 SDL 渲染窗口嵌入到 Qt 的 Show 控件中，两者共享同一块显示区域
+- **全局快捷键**：通过 `QAction` + `Qt::ApplicationShortcut` 实现全屏状态下的键盘响应，解决了焦点在 SDL 窗口时 Qt 无法接收键盘事件的问题
+
 ### 系统架构图
 
 ```
@@ -418,12 +482,14 @@ open huahua-player.app
 ### 关键类说明
 
 #### VideoCtl (视频控制器)
-核心解码和播放控制类，负责：
-- 启动和管理读取线程
-- 音视频解码线程管理
-- 音视频同步控制
-- 播放状态管理（播放/暂停/停止/跳转）
-- 音量控制和速度调节
+基于 ffplay 架构的核心解码和播放控制类（单例模式），负责：
+- 启动和管理读取线程 (read_thread)
+- 音视频解码线程管理 (audio_thread / video_thread)
+- 渲染循环 (loop_thread) 与视频刷新调度 (video_refresh)
+- 音视频同步控制（三种时钟策略）
+- 播放状态管理（播放/暂停/停止/跳转/逐帧）
+- SDL 窗口和渲染器管理
+- Sonic 音频变速处理
 
 主要方法：
 ```cpp
@@ -432,38 +498,47 @@ void OnPause();                                    // 暂停/继续
 void OnStop();                                     // 停止播放
 void OnPlaySeek(double percent);                   // 跳转到指定位置
 void OnPlayVolume(double percent);                 // 设置音量
+void OnStep();                                     // 逐帧播放
 void update_speed(float speed);                    // 调整播放速度
 ```
 
 #### VideoState (视频状态)
-管理单个媒体文件的完整状态：
+ffplay 架构的核心数据结构，管理单个媒体文件的完整播放状态：
 - 解复用器上下文 (AVFormatContext)
-- 音视频流信息
-- 数据包队列
-- 帧队列
-- 时钟同步信息
-- 解码器状态
+- 音视频流信息（audio_st / video_st / subtitle_st）
+- 三路数据包队列 (PacketQueue)：音频、视频、字幕
+- 三路帧队列 (FrameQueue)：图像、字幕、音频采样
+- 三个独立时钟 (Clock)：audclk / vidclk / extclk
+- 三个解码器 (Decoder)：auddec / viddec / subdec
+- Seek 请求状态与序列号追踪
+- 实时流检测 (realtime)
 
 #### PacketQueue (数据包队列)
-线程安全的生产者-消费者队列：
-- 存储未解码的 AVPacket
-- 提供阻塞式读写接口
-- 支持队列清空和销毁
-- 序列号管理（用于流切换）
+基于 SDL_mutex + SDL_cond 的线程安全生产者-消费者队列：
+- 链表结构存储未解码的 AVPacket
+- 提供阻塞式读写接口（无数据时消费者阻塞等待）
+- 序列号 (serial) 机制：每次 seek 递增，用于识别过时数据包
+- 支持队列清空 (flush)、销毁 (destroy)、中止 (abort)
+- flush_pkt 特殊标记：seek 后清理解码器内部缓存
 
 #### FrameQueue (帧队列)
-存储解码后的帧数据：
-- 预分配固定大小的帧缓存
-- 读写索引分离
-- 支持 peek 操作（不消费数据）
-- 与 PacketQueue 关联
+环形数组实现的线程安全帧缓存：
+- 预分配固定大小的帧缓存（FRAME_QUEUE_SIZE），避免运行时内存分配
+- 读写索引分离 (rindex / windex)，支持并发访问
+- 支持 peek 操作（查看但不消费数据）：peek / peek_next / peek_last
+- keep_last 机制：保留最后一帧用于暂停时持续显示
+- 与 PacketQueue 关联，通过 pktq 指针访问对应的数据包队列
 
 #### Clock (时钟)
-音视频同步的核心：
-- 维护 PTS (Presentation Time Stamp)
-- 计算时钟漂移
-- 支持暂停/恢复
-- 三种同步模式：音频主时钟、视频主时钟、外部时钟
+ffplay 音视频同步的核心机制：
+- 维护 PTS (Presentation Time Stamp) 和时钟漂移 (pts_drift)
+- `pts_drift = pts - 时间基准`，用于补偿系统时钟与媒体时钟的偏差
+- 支持暂停/恢复，暂停时冻结时钟值
+- 三种同步模式：
+  - `AV_SYNC_AUDIO_MASTER`（默认）：以音频时钟为准，视频追音频
+  - `AV_SYNC_VIDEO_MASTER`：以视频时钟为准，音频追视频
+  - `AV_SYNC_EXTERNAL_CLOCK`：以外部时钟为准，音视频都追赶
+- 外部时钟速度自适应调整 (EXTERNAL_CLOCK_SPEED_MIN ~ MAX)，根据缓冲区填充度动态调节
 
 ---
 
