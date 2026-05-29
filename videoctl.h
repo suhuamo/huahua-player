@@ -76,6 +76,7 @@ private:
     VideoState* stream_open(const char* filename);
     void init_clock(Clock *c, int *queueSerial);
     void set_clock(Clock *c, double pts, int serial);
+    void set_clock_speed(Clock *c, double speed);
     double get_master_clock(VideoState *is);
     void read_thread(VideoState *is);
     int stream_component_open(VideoState *is, int stream_index);

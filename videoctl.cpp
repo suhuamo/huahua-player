@@ -296,6 +296,16 @@ void VideoCtl::set_clock(Clock *c, double pts, int serial) {
     set_clock_at(c, pts, serial, time);
 }
 
+void VideoCtl::set_clock_speed(Clock *c, double speed) {
+    /*
+     * mark：先通过 get_clock 获取当前时钟值并重新 set_clock，更新 last_updated 和 pts_drift，
+     * 然后再修改 speed。这样 get_clock 在之后的时间推进中就能正确使用新的 speed 值。
+     * 如果不先 set_clock，那么 speed 改变后，用旧的 pts_drift 和 last_updated 算出来的时钟值会跳变。
+     */
+    set_clock(c, get_clock(c), c->serial);
+    c->speed = speed;
+}
+
 void VideoCtl::set_clock_at(Clock *c, double pts, int serial, double time) {
     c->pts = pts;
     c->last_updated = time;
@@ -880,11 +890,13 @@ void sdl_audio_callback(void *opaque, Uint8 *stream, int len) {
     is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
     if (!std::isnan(is->audio_clock)) {
         /*
-        * mark：跟视频一样，设置音频时钟pts，比如第 100 帧的声音应该在第 50s播放，那么pts 为 50s，
-        * 但是现在比如设置为了2倍数，那么第 100 帧的声音就应该在第 25s 播放，那么这里 pts 就为 25s，即50(原始的pts)/2(倍数) = 25s
+        * mark：使用原始媒体时间 audio_clock，不再除以倍率。
+        * 音频硬件缓冲区的时长是实时单位，需要乘以倍率转换为媒体时间：
+        *   当前播放位置 = audio_clock(媒体时间) - 缓冲区时长(实时) * 倍率
+        * 2x时，缓冲区0.05s实时 = 0.1s媒体时间，所以当前听到的是 audio_clock - 0.1
         */
-        double audio_clock = is->audio_clock / videoCtl->get_playback_rate();
-        videoCtl->set_clock_at(&is->audclk, audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec,
+        // todo: audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec 公式为什么就是 pts了
+        videoCtl->set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec * videoCtl->get_playback_rate(),
         is->audio_clock_serial, g_audio_callback_time / 1000000.0);
     }
     // av_log_info("callback video_clk=%f, audio_clk=%f, pts=%f, is->audio_clock=%f, sdl_buf = %f, bytes_per_sec=%d\n", videoCtl->get_clock(&is->vidclk), videoCtl->get_clock(&is->audclk),is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec, is->audio_clock, (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size), is->audio_tgt.bytes_per_sec);
@@ -1210,8 +1222,8 @@ int VideoCtl::synchronize_audio(VideoState *is, int nb_samples) {
     if (get_master_sync_type(is) != AV_SYNC_AUDIO_MASTER) {
         double diff, avg_diff;
         int min_nb_samples, max_nb_samples;
-        // 计算当前音频需要同步时间
-        diff = get_clock(&is->audclk) - get_master_clock(is);
+        // 计算当前音频需要同步时间（媒体时间单位），然后转换为实时单位
+        diff = (get_clock(&is->audclk) - get_master_clock(is)) / m_playback_rate;
         // 只有在适当的时间差下，才进行同步，差太多就默认为没问题，是故意这样的，就不需要进行同步
         if (!std::isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
             /*
@@ -1789,7 +1801,7 @@ display:
 //    todo:步长的时候会导致 get_master_clock = NAN 会存在问题吧
     double clock = get_master_clock(is);
     if (!std::isnan(clock) && clock >= 0) {
-        double media_time = clock * m_playback_rate;
+        double media_time = clock;
         emit SigVideoPlaySeconds((int)media_time);
     }
 }
@@ -1801,19 +1813,29 @@ double VideoCtl::compute_target_delay(double delay, VideoState *is) {
     if (get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) {
         diff = get_clock(&is->vidclk) - get_master_clock(is);
         /*
+         * mark：diff 是媒体时间单位（因为时钟存储的是原始 pts），需要转换为实时单位才能和 delay（实时单位）做运算。
+         * 比如 2x 倍速下，diff=0.05s 媒体时间 = 0.025s 实时时间。
+         * 不转换的话会过度补偿同步，导致画面卡顿。
+         */
+        double diff_real = diff / m_playback_rate;
+        /*
          * mark：正常来说调整阈值不能超过 0.1s，不然肉眼能感受得出来了，我们这里的追赶是为了用户无法感知的情况下，实现音视频同步的调整。
          */
         sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
         /*
          * mark: fabs(diff) < is->max_frame_duration 代表的是我们认为两帧之间的时差允许的最大值，那么如果两帧之间的时差小于这个阈值，那么我们就认为这两帧之间的时差是有效的，那么我们就可以进行追赶。
          * 否则如果是 seek，从第一分钟跳转到第30分种，这很明显不需要我们追赶了，在外面会有额外的处理，比如直接丢帧得了。
+         * todo：为什么音频没有这个判断？
          */
         if (!std::isnan(diff) && fabs(diff) < is->max_frame_duration) {
-            if (diff <= -sync_threshold)
-                delay = FFMAX(0, delay + diff);
-            else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
-                delay = delay + diff;
-            else if (diff >= sync_threshold)
+            /*
+             * todo：这里追赶逻辑为什么是直接等很久，而不是每一帧调整一点，比如 delay = delay + diff 不是直接等同步完成了吗
+             */
+            if (diff_real <= -sync_threshold)
+                delay = FFMAX(0, delay + diff_real);
+            else if (diff_real >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
+                delay = delay + diff_real;
+            else if (diff_real >= sync_threshold)
                 delay = 2 * delay;
         }
     }
@@ -1841,10 +1863,12 @@ double VideoCtl::vp_duration(VideoState *is, Frame *vp, Frame *nextVp) {
 
 void VideoCtl::update_video_pts(VideoState *is, double pts, int64_t pos, int serial) {
     /*
-     * mark：设置时钟pts，比如第 100 张图片应该在第 50s显示，那么pts 为 50s，
-     * 但是现在比如设置为了2倍数，那么第 100 张图片就应该在第 25s 显示，那么这里 pts 就为 25s，即50(原始的pts)/2(倍数) = 25s
+     * mark：直接使用原始媒体时间 pts，不再除以倍率。
+     * 倍速通过 Clock.speed 机制来处理，get_clock 会根据 speed 自动按倍率推进时间。
+     * 之前除以倍率的方式会导致倍速切换时时钟跳变：
+     *   比如倍率从1x变2x时，同一个 pts=2.0 的帧，时钟值从 2.0/1=2.0 突变到 2.0/2=1.0
      */
-    set_clock(&is->vidclk, pts / m_playback_rate, serial);
+    set_clock(&is->vidclk, pts, serial);
 }
 
 void VideoCtl::video_display(VideoState *is) {
@@ -2448,8 +2472,14 @@ void VideoCtl::sub_volume() {
 
 void VideoCtl::update_speed(float speed) {
     av_log_info("playback rate changed, from:%f to:%f\n", m_playback_rate, speed);
+    // todo：其实可以做个优化，如果当前播放速度和目标播放速度相同，那么就不用切换播放速度了，这样会省点时间
+    // 先更新倍率，再更新时钟速度。set_clock_speed 内部会先 get_clock 保存当前值，再修改 speed，避免时钟跳变
     m_playback_rate = speed;
     m_playback_changed = true;
+    if (m_cur_stream) {
+        set_clock_speed(&m_cur_stream->vidclk, speed);
+        set_clock_speed(&m_cur_stream->audclk, speed);
+    }
     emit SigSpeed(m_playback_rate);
 }
 
