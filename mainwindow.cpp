@@ -104,75 +104,6 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     QWidget::mouseMoveEvent(event);
 }
 
-QString getKeyName(int key)
-{
-    switch (key) {
-    case Qt::Key_Space: return "Space";
-    case Qt::Key_Escape: return "ESC";
-    case Qt::Key_F1: return "F1";
-    case Qt::Key_F2: return "F2";
-    case Qt::Key_F3: return "F3";
-    case Qt::Key_F4: return "F4";
-    case Qt::Key_F5: return "F5";
-    case Qt::Key_F6: return "F6";
-    case Qt::Key_F7: return "F7";
-    case Qt::Key_F8: return "F8";
-    case Qt::Key_F9: return "F9";
-    case Qt::Key_F10: return "F10";
-    case Qt::Key_F11: return "F11";
-    case Qt::Key_F12: return "F12";
-    case Qt::Key_Left: return "Left";
-    case Qt::Key_Right: return "Right";
-    case Qt::Key_Up: return "Up";
-    case Qt::Key_Down: return "Down";
-    case Qt::Key_Enter: return "Enter";
-    case Qt::Key_Return: return "Return";
-    case Qt::Key_Tab: return "Tab";
-    case Qt::Key_Backspace: return "Backspace";
-    case Qt::Key_Delete: return "Delete";
-    case Qt::Key_Home: return "Home";
-    case Qt::Key_End: return "End";
-    case Qt::Key_PageUp: return "PageUp";
-    case Qt::Key_PageDown: return "PageDown";
-    default:
-        if (key >= Qt::Key_A && key <= Qt::Key_Z) {
-            return QString(QChar('A' + key - Qt::Key_A));
-        } else if (key >= Qt::Key_0 && key <= Qt::Key_9) {
-            return QString(QChar('0' + key - Qt::Key_0));
-        }
-        return QString::number(key);
-    }
-}
-
-void MainWindow::keyReleaseEvent(QKeyEvent *event)
-{
-    qDebug() << "MainWid::keyPressEvent:" << getKeyName(event->key());
-    switch (event->key())
-    {
-    case Qt::Key_Left://后退5s
-        emit SigSeekBack();
-        break;
-    case Qt::Key_Right://前进5s
-        emit SigSeekForward();
-        break;
-    case Qt::Key_Up://增加指定步长音量
-        emit SigAddVolume();
-        break;
-    case Qt::Key_Down://减少指定步长音量
-        emit SigSubVolume();
-        break;
-    case Qt::Key_Space://暂停/恢复播放
-        emit SigPlayOrPause();
-        break;
-    case Qt::Key_S://逐帧播放
-        emit SigStep();
-        break;
-
-    default:
-        break;
-    }
-}
-
 //链接信号与槽
 void MainWindow::connectSignalSlots()
 {
@@ -343,6 +274,55 @@ void MainWindow::initMenu()
 
     // 将行为设置为应用全局有效（F11需要全局生效，因为全屏时焦点在Show窗口上）
     act_full_screen->setShortcutContext(Qt::ApplicationShortcut);
+
+    // 上下左右方向键设置为全局action（全屏时焦点在Show窗口上，也需要生效）
+    QAction *act_seek_back = new QAction(this);
+    act_seek_back->setShortcut(Qt::Key_Left);
+    act_seek_back->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_seek_back, &QAction::triggered, this, [this]() {
+        emit SigSeekBack();
+    });
+    this->addAction(act_seek_back);
+
+    QAction *act_seek_forward = new QAction(this);
+    act_seek_forward->setShortcut(Qt::Key_Right);
+    act_seek_forward->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_seek_forward, &QAction::triggered, this, [this]() {
+        emit SigSeekForward();
+    });
+    this->addAction(act_seek_forward);
+
+    QAction *act_add_volume = new QAction(this);
+    act_add_volume->setShortcut(Qt::Key_Up);
+    act_add_volume->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_add_volume, &QAction::triggered, this, [this]() {
+        emit SigAddVolume();
+    });
+    this->addAction(act_add_volume);
+
+    QAction *act_sub_volume = new QAction(this);
+    act_sub_volume->setShortcut(Qt::Key_Down);
+    act_sub_volume->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_sub_volume, &QAction::triggered, this, [this]() {
+        emit SigSubVolume();
+    });
+    this->addAction(act_sub_volume);
+
+    QAction *act_play_or_pause = new QAction(this);
+    act_play_or_pause->setShortcut(Qt::Key_Space);
+    act_play_or_pause->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_play_or_pause, &QAction::triggered, this, [this]() {
+        emit SigPlayOrPause();
+    });
+    this->addAction(act_play_or_pause);
+
+    QAction *act_step = new QAction(this);
+    act_step->setShortcut(Qt::Key_S);
+    act_step->setShortcutContext(Qt::ApplicationShortcut);
+    connect(act_step, &QAction::triggered, this, [this]() {
+        emit SigStep();
+    });
+    this->addAction(act_step);
 
     // 把action添加到当前窗口上
     this->addAction(act_about);

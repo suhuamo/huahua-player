@@ -306,28 +306,10 @@ void Show::keyReleaseEvent(QKeyEvent *event)
     
     qDebug() << "Show::keyReleaseEvent:" << keyName;
     
-    // 发送相应的信号
+    // 发送相应的信号（上下左右、空格、S已通过MainWindow全局QAction处理）
     switch (key) {
-        case Qt::Key_Space:
-            emit SigPlayOrPause();
-            break;
         case Qt::Key_Escape:
             emit SigExitFullScreen(); // ESC退出全屏
-            break;
-        case Qt::Key_Left:
-            emit SigSeekBack();
-            break;
-        case Qt::Key_Right:
-            emit SigSeekForward();
-            break;
-        case Qt::Key_Up:
-            emit SigAddVolume();
-            break;
-        case Qt::Key_Down:
-            emit SigSubVolume();
-            break;
-        case Qt::Key_S:
-            emit SigStep();
             break;
         default:
             break;

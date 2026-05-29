@@ -29,8 +29,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
-//    键盘事件
-    void keyReleaseEvent(QKeyEvent *event);
+//    键盘事件已通过全局QAction处理
 private:
     void connectSignalSlots();
     void SlotOnMinBtnClicked();
