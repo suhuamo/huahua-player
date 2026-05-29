@@ -59,9 +59,26 @@ const int SEEK_INCR = 5;
 static FILE *log_file = NULL;
 // 自定义日志回调
 static void log_callback(void *ptr, int level, const char *fmt, va_list vl) {
-    if (log_file && level <= av_log_get_level()) {
-        vfprintf(log_file, fmt, vl);
-        fflush(log_file);
+    // 小于 av_log_get_level 不输出
+    if (level <= av_log_get_level()) {
+        // 记录当前时间
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        char time_buf[64];
+        snprintf(time_buf, sizeof(time_buf), "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+         st.wYear, st.wMonth, st.wDay,
+         st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+
+        // 输出到文件
+        if (log_file) {
+            fprintf(log_file, "[%s] ", time_buf);
+            vfprintf(log_file, fmt, vl);
+            fflush(log_file);
+        }
+        
+        // 输出到窗口
+        fprintf(stderr, "[%s] ", time_buf);
+        vfprintf(stderr, fmt, vl);
     }
 }
 
