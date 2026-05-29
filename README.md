@@ -225,6 +225,19 @@ huahua-player/
 5. 复制平台插件
 6. 自动启动程序
 
+**配置说明**：`run.bat` 从项目根目录下的 `.env/run.config` 读取路径配置（`QT_BIN`、`MINGW_BIN`、`PROJECT_DIR`、`BUILD_DIR`）。如果该文件不存在或某项未配置，则使用脚本中的默认值。首次使用时可复制示例配置并修改：
+
+```bash
+# 配置文件位置
+.env/run.config
+
+# 配置格式（# 开头为注释，未配置的项使用默认值）
+QT_BIN=D:\ide\Qt\Qt5.8.0\5.8\mingw53_32\bin
+MINGW_BIN=D:\ide\Qt\Qt5.8.0\Tools\mingw530_32\bin
+PROJECT_DIR=D:\code\suhuamo\huahua-player
+BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug
+```
+
 **方式二：手动命令行**
 
 ```bash

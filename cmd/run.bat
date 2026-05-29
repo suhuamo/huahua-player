@@ -4,10 +4,31 @@ setlocal enabledelayedexpansion
 :: Build and Run Script for flower-player
 :: Usage: double-click or run in cmd: build_and_run.bat
 
-set QT_BIN=D:\ide\Qt\Qt5.8.0\5.8\mingw53_32\bin
-set MINGW_BIN=D:\ide\Qt\Qt5.8.0\Tools\mingw530_32\bin
-set PROJECT_DIR=D:\code\suhuamo\huahua-player
-set BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug
+:: Default values
+set "DEFAULT_QT_BIN=D:\ide\Qt\Qt5.8.0\5.8\mingw53_32\bin"
+set "DEFAULT_MINGW_BIN=D:\ide\Qt\Qt5.8.0\Tools\mingw530_32\bin"
+set "DEFAULT_PROJECT_DIR=D:\code\suhuamo\huahua-player"
+set "DEFAULT_BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug"
+
+:: Read config from .env/run.config (overrides defaults)
+set "CONFIG_FILE=%~dp0..\.env\run.config"
+if exist "%CONFIG_FILE%" (
+    for /f "usebackq tokens=1,* delims==" %%a in ("%CONFIG_FILE%") do (
+        set "_line=%%a"
+        if "!_line:~0,1!" neq "#" if "%%a" neq "" (
+            if "%%a"=="QT_BIN" set "QT_BIN=%%b"
+            if "%%a"=="MINGW_BIN" set "MINGW_BIN=%%b"
+            if "%%a"=="PROJECT_DIR" set "PROJECT_DIR=%%b"
+            if "%%a"=="BUILD_DIR" set "BUILD_DIR=%%b"
+        )
+    )
+)
+
+:: Fall back to defaults if not set in config
+if not defined QT_BIN set "QT_BIN=%DEFAULT_QT_BIN%"
+if not defined MINGW_BIN set "MINGW_BIN=%DEFAULT_MINGW_BIN%"
+if not defined PROJECT_DIR set "PROJECT_DIR=%DEFAULT_PROJECT_DIR%"
+if not defined BUILD_DIR set "BUILD_DIR=%DEFAULT_BUILD_DIR%"
 
 :: Set PATH
 set PATH=%QT_BIN%;%MINGW_BIN%;%PATH%

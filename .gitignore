@@ -8,3 +8,6 @@ build
 
 #VSCode
 .vscode/
+
+#Environment config
+.env/
