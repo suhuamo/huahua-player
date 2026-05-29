@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Qt](https://img.shields.io/badge/Qt-5.x-green.svg)
+![Qt](https://img.shields.io/badge/Qt-5.8.0-green.svg)
 ![C++](https://img.shields.io/badge/C%2B%2B-11-blue.svg)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-4.2.1-red.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
@@ -81,7 +81,7 @@
 ## 🛠 技术栈
 
 ### 核心框架
-- **Qt 5.x** - GUI 应用框架
+- **Qt 5.8.0** - GUI 应用框架
 - **C++11** - 编程语言
 - **FFmpeg 4.2.1** - 音视频编解码库
 - **SDL2** - 音频输出和渲染引擎
@@ -158,11 +158,11 @@ huahua-player/
 ### 开发环境
 - **操作系统**: Windows 7/10/11, Linux, macOS
 - **编译器**: GCC 5+, MSVC 2015+, Clang 3.8+
-- **Qt 版本**: Qt 5.9 或更高版本
+- **Qt 版本**: Qt 5.8.0（MinGW 5.3.0 32位）
 - **CMake**: 3.10+（可选，用于构建）
 
 ### 运行时依赖
-- Qt 5.x 运行时库
+- Qt 5.8.0 运行时库
 - FFmpeg 4.2.1 动态库
 - SDL2 运行时库
 
@@ -192,8 +192,8 @@ huahua-player/
    - Qt Creator 会自动检测编译器（MSVC 或 MinGW）
 
 4. **配置构建套件**
-   - 选择 Desktop Qt 5.x MSVC/MinGW 64-bit 或 32-bit
-   - 确保与 DLL 文件架构匹配（x64 或 x86）
+   - 选择 Desktop Qt 5.8.0 MinGW 32-bit
+   - 确保与 DLL 文件架构匹配（x86）
 
 5. **构建项目**
    ```
