@@ -134,7 +134,7 @@ huahua-player/
 ├── *.cpp                   # 源文件
 ├── *.ui                    # Qt UI 设计文件
 ├── *.qrc                   # Qt 资源文件
-└── flower-player.pro       # Qt 项目配置文件
+└── huahua-player.pro       # Qt 项目配置文件
 ```
 
 ### 核心模块说明
@@ -188,7 +188,7 @@ huahua-player/
    - 确保 `lib/` 目录下包含对应的 .lib 文件和头文件
 
 3. **打开项目**
-   - 使用 Qt Creator 打开 `flower-player.pro`
+   - 使用 Qt Creator 打开 `huahua-player.pro`
    - Qt Creator 会自动检测编译器（MSVC 或 MinGW）
 
 4. **配置构建套件**
@@ -235,7 +235,7 @@ huahua-player/
 QT_BIN=D:\ide\Qt\Qt5.8.0\5.8\mingw53_32\bin
 MINGW_BIN=D:\ide\Qt\Qt5.8.0\Tools\mingw530_32\bin
 PROJECT_DIR=D:\code\suhuamo\huahua-player
-BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug
+BUILD_DIR=D:\code\suhuamo\build-huahua-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug
 ```
 
 **方式二：手动命令行**
@@ -245,7 +245,7 @@ BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug
 cd huahua-player
 
 # 使用 qmake 生成 Makefile
-qmake flower-player.pro
+qmake huahua-player.pro
 
 # 编译项目
 mingw32-make    # MinGW
@@ -253,9 +253,9 @@ mingw32-make    # MinGW
 nmake           # MSVC
 
 # 运行程序
-debug\flower-player.exe    # Debug 版本
+debug\huahua-player.exe    # Debug 版本
 # 或
-release\flower-player.exe  # Release 版本
+release\huahua-player.exe  # Release 版本
 ```
 
 ### Linux
@@ -270,18 +270,18 @@ release\flower-player.exe  # Release 版本
 
 2. **编译项目**
    ```bash
-   qmake flower-player.pro
+   qmake huahua-player.pro
    make
-   ./flower-player
+   ./huahua-player
    ```
 
 ### macOS
 
 ```bash
 brew install qt@5 ffmpeg sdl2
-qmake flower-player.pro
+qmake huahua-player.pro
 make
-open flower-player.app
+open huahua-player.app
 ```
 
 ---

@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Build and Run Script for flower-player
+:: Build and Run Script for huahua-player
 :: Usage: double-click or run in cmd: build_and_run.bat
 
 :: Default values
 set "DEFAULT_QT_BIN=D:\ide\Qt\Qt5.8.0\5.8\mingw53_32\bin"
 set "DEFAULT_MINGW_BIN=D:\ide\Qt\Qt5.8.0\Tools\mingw530_32\bin"
 set "DEFAULT_PROJECT_DIR=D:\code\suhuamo\huahua-player"
-set "DEFAULT_BUILD_DIR=D:\code\suhuamo\build-flower-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug"
+set "DEFAULT_BUILD_DIR=D:\code\suhuamo\build-huahua-player-Desktop_Qt_5_8_0_MinGW_32bit-Debug"
 
 :: Read config from .env/run.config (overrides defaults)
 set "CONFIG_FILE=%~dp0..\.env\run.config"
@@ -34,7 +34,7 @@ if not defined BUILD_DIR set "BUILD_DIR=%DEFAULT_BUILD_DIR%"
 set PATH=%QT_BIN%;%MINGW_BIN%;%PATH%
 
 echo ==========================================
-echo Building flower-player...
+echo Building huahua-player...
 echo ==========================================
 
 :: Create build directory if not exists
@@ -49,7 +49,7 @@ cd /d "%BUILD_DIR%"
 :: Run qmake
 echo.
 echo [1/3] Running qmake...
-"%QT_BIN%\qmake.exe" -o Makefile "%PROJECT_DIR%\flower-player.pro" -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
+"%QT_BIN%\qmake.exe" -o Makefile "%PROJECT_DIR%\huahua-player.pro" -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
 
 if errorlevel 1 (
     echo Error: qmake failed!
@@ -105,8 +105,8 @@ echo ==========================================
 echo Build and Deploy completed!
 echo ==========================================
 echo.
-echo Starting flower-player...
+echo Starting huahua-player...
 echo.
 
 :: Run the executable
-start "" "%DEBUG_DIR%\flower-player.exe"
+start "" "%DEBUG_DIR%\huahua-player.exe"
