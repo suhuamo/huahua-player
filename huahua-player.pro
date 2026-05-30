@@ -56,18 +56,10 @@ FORMS    += mainwindow.ui \
 
 win32 {
     # 根据编译器位数设置架构
-    win32-g++ {
-        contains(QMAKE_TARGET.arch, x86_64) {
-            ARCH = x64
-        } else {
-            ARCH = x86
-        }
-    } else:win32-msvc* {
-        contains(QMAKE_HOST.arch, x86_64) {
-            ARCH = x64
-        } else {
-            ARCH = x86
-        }
+    contains(QMAKE_HOST.arch, x86_64) {
+        ARCH = x64
+    } else {
+        ARCH = x86
     }
 
     message("Target architecture: $$ARCH")
