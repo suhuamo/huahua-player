@@ -41,13 +41,7 @@ private:
 signals:
     void SigPlay(QString strFile);
     void SigOpenFile(QString strFile);
-    void SigPlayOrPause();
     void SigExitFullScreen();
-    void SigSeekBack();
-    void SigSeekForward();
-    void SigAddVolume();
-    void SigSubVolume();
-    void SigStep(); // 逐帧播放
 private slots:
     void OnToastTimeout();
     void OnShortcutHintTimeout();

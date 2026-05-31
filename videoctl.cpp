@@ -2163,16 +2163,6 @@ bool VideoCtl::is_normal_playback_rate() {
     }
 }
 
-void VideoCtl::OnSpeed()
-{
-//    循环倍数变化
-    float speed = m_playback_rate + PLAYBACK_RATE_SCALE;
-    if(speed > PLAYBACK_RATE_MAX) {
-        speed = PLAYBACK_RATE_MIN;
-    }
-    update_speed(speed);
-}
-
 void VideoCtl::OnSetSpeed(float speed)
 {
     if (speed < PLAYBACK_RATE_MIN || speed > PLAYBACK_RATE_MAX) {
@@ -2530,20 +2520,5 @@ void VideoCtl::update_speed(float speed) {
         set_clock_speed(&m_cur_stream->audclk, speed);
     }
     emit SigSpeed(m_playback_rate);
-}
-
-// 按照固定步长来增加播放速度
-void VideoCtl::add_speed() {
-    float speed = FFMIN(m_playback_rate + PLAYBACK_RATE_SCALE, PLAYBACK_RATE_MAX);
-    update_speed(speed);
-}
-
-void VideoCtl::sub_speed() {
-    float speed = FFMAX(m_playback_rate - PLAYBACK_RATE_SCALE, PLAYBACK_RATE_MIN);
-    update_speed(speed);
-}
-
-void VideoCtl::reset_speed() {
-    update_speed(PLAYBACK_RATE_RESET);
 }
 

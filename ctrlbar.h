@@ -43,7 +43,6 @@ signals:
     void SigPlayListCtlBtnClicked();
     void SigBackBtnClicked();
     void SigNextBtnClicked();
-    void SigSpeed();
     void SigSpeedChanged(float speed); // 选择指定倍速
     void SigPlayOrPause();
     void SigStop();

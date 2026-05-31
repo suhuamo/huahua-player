@@ -47,7 +47,6 @@ public:
     int64_t get_target_frequency();
     int get_target_channels();
     bool is_normal_playback_rate();
-    void OnSpeed();
     void OnSetSpeed(float speed); // 设置指定倍速
     void OnPause();
     void OnStop();
@@ -120,9 +119,6 @@ private:
     void add_volume();
     void sub_volume();
     void update_speed(float speed);
-    void add_speed();
-    void sub_speed();
-    void reset_speed();
 
 private:
     static VideoCtl* m_instance;

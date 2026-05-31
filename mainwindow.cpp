@@ -125,16 +125,10 @@ void MainWindow::connectSignalSlots()
 //    图片显示窗口的事件功能，比如拖拽、快捷键按下等
     connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
     
-    // Show窗口的键盘事件处理（全屏时生效）--因为全屏后，show变成了顶层窗口，mainwindow 快捷键就无法生效了，只能给 show 又添加一次一模一样的快捷键事件。
+    // Show窗口: ESC退出全屏（其他快捷键已通过MainWindow全局QAction处理，ApplicationShortcut全屏时也生效）
     connect(ui->ShowWid, &Show::SigExitFullScreen, this, &MainWindow::SlotOnFullScreenBtnClicked);
-    connect(ui->ShowWid, &Show::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
-    connect(ui->ShowWid, &Show::SigSeekBack, VideoCtl::GetInstance(), &VideoCtl::OnSeekBack);
-    connect(ui->ShowWid, &Show::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
-    connect(ui->ShowWid, &Show::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
-    connect(ui->ShowWid, &Show::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
-    connect(ui->ShowWid, &Show::SigStep, VideoCtl::GetInstance(), &VideoCtl::OnStep);
 
-//    mainwindow 的快捷键功能
+    // MainWindow全局QAction快捷键功能（ApplicationShortcut，全屏时也生效）
     connect(this, &MainWindow::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
     connect(this, &MainWindow::SigSeekBack, VideoCtl::GetInstance(), &VideoCtl::OnSeekBack);
     connect(this, &MainWindow::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
@@ -150,7 +144,6 @@ void MainWindow::connectSignalSlots()
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
     connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);
     connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &m_playlist, &Playlist::SlotOnNextPlay);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSpeed, VideoCtl::GetInstance(), &VideoCtl::OnSpeed);
     connect(ui->CtrlBarWid, &CtrlBar::SigSpeedChanged, VideoCtl::GetInstance(), &VideoCtl::OnSetSpeed);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
     connect(ui->CtrlBarWid, &CtrlBar::SigStop, VideoCtl::GetInstance(), &VideoCtl::OnUserStop);
