@@ -64,6 +64,7 @@
 - 🎯 鼠标拖拽移动窗口
 - 🎯 **操作提示显示** - 音量和进度调整时显示实时反馈
 - 🎯 **逐帧播放** - 按下 `S` 键逐帧播放视频
+- 🎯 **音频分离（人声/伴奏）** - 基于 Demucs AI 模型，支持实时切换 6 种音频模式：原声、仅人声、仅伴奏、仅鼓点、仅贝斯、仅其他
 
 ### 播放列表管理
 - 📝 支持文件拖拽添加到播放列表
@@ -92,6 +93,7 @@
 - 生产者-消费者队列模型
 - 信号槽机制（Qt Signal-Slot）
 - 事件驱动编程
+- AI 音频源分离（Demucs / htdemucs_ft 模型）
 
 ### 依赖库
 ```
@@ -105,6 +107,12 @@ FFmpeg 组件:
 
 SDL2:
 └── SDL2         - 音频播放和纹理渲染
+
+音频分离（可选）:
+├── Python 3.8+  - Demucs 运行环境
+├── demucs       - AI 音频源分离框架
+├── torch 2.7.0  - PyTorch 推理引擎
+└── soundfile    - 音频文件读写后端
 ```
 
 ---
@@ -149,6 +157,8 @@ huahua-player/
 | 标题栏 | `title.h/cpp` | 自定义标题栏（最小化/最大化/关闭） |
 | 数据控制 | `datactl.h` | 数据结构定义（队列、帧、解码器等） |
 | 音频变速 | `sonic.h/cpp` | 音频变速不变调算法实现 |
+| 音频分离 | `audioseparator.h/cpp` | 基于 Demucs 的音频人声/伴奏分离，支持缓存与进度回调 |
+| 分离进度 | `separationprogressdialog.h/cpp` | 音频分离进度对话框，显示文件名、目标模式、4个stem独立状态与总进度 |
 | 全局助手 | `globalhelper.h/cpp` | 全局辅助函数 |
 
 ---
@@ -165,6 +175,20 @@ huahua-player/
 - Qt 5.8.0 运行时库
 - FFmpeg 4.2.1 动态库
 - SDL2 运行时库
+
+### 音频分离功能依赖（可选）
+如需使用音频分离（人声/伴奏）功能，需额外安装：
+- **Python 3.8+**（推荐 3.10+）
+- **demucs**: `pip install demucs`
+- **torch 2.7.0 + torchaudio 2.7.0**: `pip install torch==2.7.0 torchaudio==2.7.0`
+- **soundfile**: `pip install soundfile`
+
+> ⚠️ **注意**: 请勿安装 torch 2.12+ / torchaudio 2.11+，这些版本依赖 torchcodec 保存音频，而 torchcodec 需要 FFmpeg shared DLL，在 Windows 上通常不可用。
+
+一键安装：
+```bash
+pip install demucs torch==2.7.0 torchaudio==2.7.0 soundfile
+```
 
 ### Windows 特定要求
 - Visual Studio 2015 或更高版本（如使用 MSVC）
@@ -315,6 +339,21 @@ open huahua-player.app
 - **选择倍速**: 点击速度按钮弹出下拉菜单，选择目标倍速（0.5x ~ 3.0x）
 - **当前倍速**: 菜单中高亮显示当前倍速，按钮文字同步更新
 
+#### 音频模式（人声/伴奏分离）
+- **切换模式**: 点击控制栏"音频模式"按钮弹出下拉菜单，选择目标音频模式
+- **6 种模式**:
+  - 原声 - 播放原始音轨
+  - 人声 - 仅播放人声部分
+  - 伴奏 - 仅播放伴奏（鼓点+贝斯+其他混合）
+  - 鼓点 - 仅播放鼓点
+  - 贝斯 - 仅播放贝斯
+  - 其他 - 仅播放其他乐器
+- **首次处理**: 首次切换到非原声模式时，自动调用 Demucs 进行 AI 音频分离（约 1~3 分钟/首），弹出进度对话框显示分离状态
+- **进度对话框**: 显示当前分离的文件名、目标模式、4 个 stem（人声/鼓点/贝斯/其他）的独立完成状态和总进度；关闭对话框等同于取消分离
+- **缓存机制**: 分离结果自动缓存至本地，后续切换秒级响应
+- **错误提示**: 环境缺失（demucs 不可用）等问题通过弹窗提示，而非 Toast
+- **前提条件**: 需安装 Python 3.8+ 和 demucs（详见[环境要求](#环境要求)）
+
 #### 窗口操作
 - **全屏**: 点击全屏按钮或按 `F11` 键 / `Esc` 退出
 - **最大化**: 点击最大化按钮
@@ -398,7 +437,19 @@ ffplay 采用经典的「读线程 → 解码线程 → 渲染循环」三线程
 - **宽高比适配**：`calculate_display_rect()` 根据视频 SAR (Sample Aspect Ratio) 精确计算显示区域，确保画面不变形
 - **SDL 事件驱动**：利用 `SDL_WINDOWEVENT` 原生事件响应窗口尺寸变化，实现视频画面的实时重绘适配
 
-#### 7. Qt + SDL 混合架构
+#### 7. AI 音频源分离（Demucs 集成）
+
+本项目集成了 Facebook Research 的 [Demucs](https://github.com/facebookresearch/demucs) 模型，实现实时音频源分离：
+
+- **分离模型**：使用 `htdemucs_ft` 模型（4-stem），将音频分离为 vocals（人声）、drums（鼓点）、bass（贝斯）、other（其他）四个音轨
+- **异步子进程架构**：`AudioSeparator` 通过 QProcess 调用 `python -m demucs`，解析 stderr 进度输出并上报百分比，不阻塞 UI 线程
+- **StemAudioSource 双源解码**：在 VideoState 中新增独立的 `StemAudioSource`，拥有自己的 `read_thread`、`audio_thread`、PacketQueue 和 FrameQueue，与原始音频流完全并行
+- **双源无缝切换**：`audio_decode_frame` 中根据 `stem_active` 标志切换原始音频源与 stem 音频源，切换时重置音频参数和重采样器，确保音质一致
+- **伴奏自动生成**：分离完成后，通过 FFmpeg `amix` 滤镜将 drums + bass + other 混合为 accompaniment.wav
+- **MD5 缓存机制**：以 `文件路径+文件大小` 的 MD5 哈希作为缓存子目录名，分离结果缓存至 `QStandardPaths::CacheLocation/huahua-stems/`，后续切换秒级响应
+- **Python 路径多策略探测**：依次尝试 `python` / `python3` / `py` 命令，再扫描 `%LOCALAPPDATA%/Programs/Python/` 目录，兼容不同 Windows 安装方式
+
+#### 8. Qt + SDL 混合架构
 
 本项目的一大特色是将 Qt 的 GUI 能力与 SDL 的音视频渲染能力结合：
 
@@ -432,6 +483,10 @@ ffplay 采用经典的「读线程 → 解码线程 → 渲染循环」三线程
 │  ┌──────────────┐  ┌──────────┐  ┌──────────┐ │
 │  │ Video Queue  │  │Audio Q   │  │Sub Queue │ │
 │  └──────────────┘  └──────────┘  └──────────┘ │
+│  ┌──────────────┐  ┌──────────────────────┐    │
+│  │StemAudioSrc  │  │ AudioSeparator       │    │
+│  │ Read+Dec+Q   │  │ (QProcess→demucs)    │    │
+│  └──────────────┘  └──────────────────────┘    │
 └─────────────────────────────────────────────────┘
                         │
                         ▼
@@ -540,6 +595,43 @@ ffplay 音视频同步的核心机制：
   - `AV_SYNC_VIDEO_MASTER`：以视频时钟为准，音频追视频
   - `AV_SYNC_EXTERNAL_CLOCK`：以外部时钟为准，音视频都追赶
 - 外部时钟速度自适应调整 (EXTERNAL_CLOCK_SPEED_MIN ~ MAX)，根据缓冲区填充度动态调节
+
+#### AudioSeparator (音频分离器)
+基于 Demucs 模型的音频源分离管理类（单例模式），负责：
+- 检测 Python + demucs 是否可用（多策略 Python 路径探测）
+- 通过 QProcess 异步调用 `python -m demucs -n htdemucs_ft` 进行 4-stem 分离
+- 解析 demucs 的 stderr 进度输出（htdemucs_ft 输出 4 个 tqdm 进度条），追踪模型索引并计算总进度
+- 分离完成后自动移动 stem 文件、清理子目录、生成伴奏文件
+- 基于文件路径+文件大小的 MD5 哈希管理缓存，避免重复分离
+- 提供取消分离功能（kill 子进程）
+
+主要接口：
+```cpp
+void startSeparation(const QString &filePath);      // 开始分离
+bool isCached(const QString &filePath) const;        // 是否已缓存
+QString getStemPath(const QString &filePath, AudioMode mode) const; // 获取 stem 路径
+void cancelSeparation();                              // 取消分离
+bool isDemucsAvailable() const;                      // 检测 demucs 可用性
+```
+
+音频模式枚举：
+```cpp
+enum AudioMode {
+    AUDIO_ORIGINAL = 0,      // 原声
+    AUDIO_VOCALS = 1,        // 仅人声
+    AUDIO_ACCOMPANIMENT = 2, // 仅伴奏（drums + bass + other）
+    AUDIO_DRUMS = 3,         // 仅鼓点
+    AUDIO_BASS = 4,          // 仅贝斯
+    AUDIO_OTHER = 5          // 仅其他
+};
+```
+
+#### StemAudioSource (Stem 音频源)
+为分离后的 stem 音频文件设计的独立解码结构体，与原始音频流并行运行：
+- 拥有独立的 AVFormatContext / AVCodecContext，可独立打开和解码 stem WAV 文件
+- 独立的 PacketQueue 和 FrameQueue，遵循与原始音频流相同的生产者-消费者模型
+- 独立的 read_thread 和 audio_thread，与主解码线程完全解耦
+- `active` 标志控制当前是否使用 stem 音频源，`audio_decode_frame` 据此切换数据源
 
 ---
 
@@ -724,6 +816,21 @@ A: 当前版本使用软件解码。如需 GPU 加速，可以：
 - 使用 FFmpeg 的 NVDEC/CUVID（NVIDIA）
 - 使用 VAAPI（Intel/AMD）
 - 使用 DXVA2（Windows）
+
+### Q6: 音频分离功能提示"未检测到 demucs"？
+A: 请确认已安装 Python 3.8+ 和 demucs：
+1. 在终端执行 `python -m demucs --help` 验证是否可用
+2. 如果终端可用但播放器检测不到，可能是 Python 不在 Qt 应用的 PATH 中
+3. 尝试将 Python 安装路径添加到系统环境变量 PATH
+4. 播放器会自动扫描 `%LOCALAPPDATA%/Programs/Python/` 目录下的安装
+
+### Q7: 音频分离很慢，能加速吗？
+A: 首次分离约 1~3 分钟/首歌，分离结果会自动缓存。后续切换音频模式为秒级响应。如需加速分离：
+- 确保安装了 CPU 优化版本的 PyTorch
+- 使用有 GPU 的机器可安装 CUDA 版本 torch 加速推理
+
+### Q8: 音频分离时可以继续播放吗？
+A: 可以。分离过程在后台 Python 子进程中进行，不影响播放器正常使用。分离完成后会自动通知，此时切换到非原声模式即可听到分离后的音频。
 
 ---
 

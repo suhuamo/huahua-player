@@ -14,6 +14,7 @@
 #include"datactl.h"
 #include"sonic.h"
 #include"globalhelper.h"
+#include"audioseparator.h"
 
 using std::string;
 using std::cout;
@@ -30,6 +31,29 @@ using std::thread;
 #define NORMAL_SAMPLE_RATES         (44100)  // 默认采样率
 #define NORMAL_CHANNELS             (2)     // 默认声道数
 
+
+// Stem 音频源：用于播放分离后的人声/伴奏等 stem 文件
+struct StemAudioSource {
+    AVFormatContext *fmt_ctx;
+    AVCodecContext *codec_ctx;
+    int stream_index;
+    AVStream *audio_st;
+
+    PacketQueue audioq;     // stem 包队列
+    FrameQueue sampq;       // stem 帧队列
+    Decoder auddec;         // stem 解码器
+
+    AudioParams audio_src;  // stem 源音频参数
+    SwrContext *swr_ctx;    // stem 重采样器
+    bool active;            // 是否激活（正在使用 stem 音频）
+
+    SDL_cond *continue_read_thread; // 用于通知 stem 读取线程
+
+    StemAudioSource() : fmt_ctx(nullptr), codec_ctx(nullptr), stream_index(-1),
+        audio_st(nullptr), swr_ctx(nullptr), active(false), continue_read_thread(nullptr) {
+        memset(&audio_src, 0, sizeof(AudioParams));
+    }
+};
 
 class VideoCtl : public QObject{
     Q_OBJECT
@@ -58,6 +82,9 @@ public:
     void OnAddVolume();
     void OnSubVolume();
     void OnStep(); // 逐帧播放
+    void OnSwitchAudioMode(int mode); // 切换音频模式（原声/人声/伴奏等）
+    bool OpenStemSource(const QString &stemPath); // 打开 stem 音频源
+    void CloseStemSource(); // 关闭 stem 音频源
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
@@ -71,6 +98,7 @@ signals:
     void SigFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
     void SigSeekForwardCompleted(int targetSeconds);  // 快进完成
     void SigSeekBackCompleted(int targetSeconds);     // 快退完成
+    void SigAudioModeChanged(int mode);               // 音频模式切换完成
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();
@@ -114,6 +142,9 @@ private:
     void stream_seek_back();
     void stream_seek_forward();
     void stream_cycle_channel(int media_type);
+    int stem_audio_thread(void *arg);  // stem 解码线程
+    void seekStemSource(int64_t pos);  // seek stem 源
+    void stem_read_thread(StemAudioSource *stem); // stem 读取线程
     void toggle_full_screen();
     void update_volume(int sign, double step);
     void add_volume();
@@ -151,6 +182,12 @@ private:
     AVFrame* m_last_frame;             // 最后一帧的引用（播放结束后用于重建纹理，av_frame_ref 保持数据有效）
     bool m_idle_loop;                   // 空闲事件循环运行标志（true=运行中，类似 m_play_loop）
     bool m_user_stop;                   // 用户主动停止标志（区分自然播放结束和用户点击停止）
+    StemAudioSource m_stem;             // stem 音频源
+    AudioMode m_audio_mode;             // 当前音频模式
+    QString m_stem_file_path;           // 当前 stem 文件路径
+    std::thread m_stem_read_thread;     // stem 读取线程
+    bool m_stem_seek_req;               // stem 是否需要 seek
+    int64_t m_stem_seek_pos;            // stem seek 目标位置（AV_TIME_BASE）
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

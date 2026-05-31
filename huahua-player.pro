@@ -33,7 +33,9 @@ SOURCES += main.cpp\
     medialist.cpp \
     customslider.cpp \
     videoctl.cpp \
-    sonic.cpp
+    sonic.cpp \
+    audioseparator.cpp \
+    separationprogressdialog.cpp
 
 HEADERS  += mainwindow.h \
     playlist.h \
@@ -45,7 +47,9 @@ HEADERS  += mainwindow.h \
     customslider.h \
     videoctl.h \
     sonic.h \
-    datactl.h
+    datactl.h \
+    audioseparator.h \
+    separationprogressdialog.h
 
 FORMS    += mainwindow.ui \
     playlist.ui \

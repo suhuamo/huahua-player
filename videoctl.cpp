@@ -124,7 +124,11 @@ VideoCtl::VideoCtl(QObject *parent):
     m_frame_flip_v(false),
     m_last_frame(nullptr),
     m_idle_loop(false),
-    m_user_stop(false){
+    m_user_stop(false),
+    m_audio_mode(AUDIO_ORIGINAL),
+    m_stem_file_path(""),
+    m_stem_seek_req(false),
+    m_stem_seek_pos(0){
 }
 
 bool VideoCtl::init() {
@@ -215,6 +219,8 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
     m_stop_emitted = false; // 重置停止标志
     m_current_file = filename;
     m_user_stop = false; // 重置用户停止标志
+    m_audio_mode = AUDIO_ORIGINAL; // 重置音频模式
+    m_stem_seek_req = false; // 重置 stem seek 标志
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -1094,6 +1100,12 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
     int64_t wanted_channel_layout;
     int wanted_nb_samples;
     Frame *af;
+
+    // 根据 m_audio_mode 决定从哪个帧队列读取
+    bool useStem = (m_audio_mode != AUDIO_ORIGINAL && m_stem.active);
+    FrameQueue *src_sampq = useStem ? &m_stem.sampq : &is->sampq;
+    PacketQueue *src_audioq = useStem ? &m_stem.audioq : &is->audioq;
+
     /*
      * mark：这里就是音频暂停时候的处理，此时返回-1，则外面就获取不到播放的音频数据了
      * 注意，暂停并不是说马上停止什么都不干，暂停指的是当前帧播放完成后，不播放下一帧了，
@@ -1106,7 +1118,7 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
         /*
          * mark：当音频帧队列里面没有数据可以读取的时候，那么每1毫秒检测判断一次是否有数据，直到时间超过音频硬件缓冲区大小的一半数据【转换后的时间】还没有读取到，那么就返回-1
          */
-        while (frame_queue_nb_remaining(&is->sampq) == 0) {
+        while (frame_queue_nb_remaining(src_sampq) == 0) {
             if ((av_gettime_relative() - g_audio_callback_time) > 1000000LL * is->audio_hw_buf_size / is->audio_tgt.bytes_per_sec / 2) {
                 return -1;
             }
@@ -1114,10 +1126,10 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
         }
 #endif
         // 这里是死等，直到报错或者有数据
-        if (!((af = frame_queue_peek_readable(&is->sampq))))
+        if (!((af = frame_queue_peek_readable(src_sampq))))
             return -1;
-        frame_queue_next(&is->sampq);
-    }while (af->serial != is->audioq.serial);
+        frame_queue_next(src_sampq);
+    }while (af->serial != src_audioq->serial);
     // 计算当前帧的字节大小
     data_size = av_samples_get_buffer_size(nullptr, av_frame_get_channels(af->frame), af->frame->nb_samples, (AVSampleFormat)af->frame->format, 1);
     /*
@@ -1132,33 +1144,38 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
      * 如果完全相同，是不需要创建重采样器的
      * mark: 重采样器 是根据音频源参数和目标参数进行转换的，如果此时参数变了，那么就需要重新初始化 重采样器
      */
-    if (af->frame->format != is->audio_src.fmt ||
-        wanted_channel_layout != is->audio_src.channel_layout ||
-        af->frame->sample_rate != is->audio_src.freq ||
-        (wanted_nb_samples != af->frame->nb_samples && !is->swr_ctx)) {
-        swr_free(&is->swr_ctx);
+    // 根据是否使用 stem 源来选择重采样器和参数
+    SwrContext **p_swr_ctx = useStem ? &m_stem.swr_ctx : &is->swr_ctx;
+    AudioParams *p_audio_src = useStem ? &m_stem.audio_src : &is->audio_src;
+    AudioParams &audio_tgt = is->audio_tgt;
+
+    if (af->frame->format != p_audio_src->fmt ||
+        wanted_channel_layout != p_audio_src->channel_layout ||
+        af->frame->sample_rate != p_audio_src->freq ||
+        (wanted_nb_samples != af->frame->nb_samples && !*p_swr_ctx)) {
+        swr_free(p_swr_ctx);
         /*
          * mark：哦知道了，audio_src 保存的是当前音频帧的参数，而 audio_tgt 保存的是SDL播放的参数（或者说当前机器输出声音的参数）
          */
-        is->swr_ctx = swr_alloc_set_opts(nullptr,
-            is->audio_tgt.channel_layout, is->audio_tgt.fmt, is->audio_tgt.freq,
+        *p_swr_ctx = swr_alloc_set_opts(nullptr,
+            audio_tgt.channel_layout, audio_tgt.fmt, audio_tgt.freq,
             wanted_channel_layout, (AVSampleFormat)af->frame->format, af->frame->sample_rate,
             0, nullptr);
-        if (!is->swr_ctx || swr_init(is->swr_ctx) < 0) {
+        if (!*p_swr_ctx || swr_init(*p_swr_ctx) < 0) {
             av_log_error( "cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels\n",
                    af->frame->sample_rate, av_get_sample_fmt_name((AVSampleFormat)af->frame->format), av_frame_get_channels(af->frame),
-                   is->audio_tgt.freq, av_get_sample_fmt_name(is->audio_tgt.fmt), is->audio_tgt.channels);
-            swr_free(&is->swr_ctx);
+                   audio_tgt.freq, av_get_sample_fmt_name(audio_tgt.fmt), audio_tgt.channels);
+            swr_free(p_swr_ctx);
             return -1;
         }
         // 更新当前音频帧的参数
-        is->audio_src.channel_layout = wanted_channel_layout;
-        is->audio_src.channels = av_frame_get_channels(af->frame);
-        is->audio_src.freq = af->frame->sample_rate;
-        is->audio_src.fmt = (AVSampleFormat)af->frame->format;
+        p_audio_src->channel_layout = wanted_channel_layout;
+        p_audio_src->channels = av_frame_get_channels(af->frame);
+        p_audio_src->freq = af->frame->sample_rate;
+        p_audio_src->fmt = (AVSampleFormat)af->frame->format;
     }
     // 如果我们设置了音频重采样器，说明需要进行音频重采样
-    if (is->swr_ctx) {
+    if (*p_swr_ctx) {
         const uint8_t **in = (const uint8_t **)af->frame->extended_data;
         uint8_t **out = &is->audio_buf1;
         /*
@@ -1168,9 +1185,9 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
          * 因为单纯重采样转换后的播放时长是不会变化的，当前样本数占用当前采样率的比例应该跟之前一样。
          * +256 是为了防止创建的 buf1 太小了，无法获取完重采样后得到的所有数据，也可以不写 +256，或者改成 +512、+1024 都可以。
          */
-        int out_count = (int64_t)wanted_nb_samples * is->audio_tgt.freq / af->frame->sample_rate + 256;
+        int out_count = (int64_t)wanted_nb_samples * audio_tgt.freq / af->frame->sample_rate + 256;
         // 计算这么多个样本点的字节大小
-        int out_size = av_samples_get_buffer_size(nullptr, is->audio_tgt.channels, out_count, is->audio_tgt.fmt, 0);
+        int out_size = av_samples_get_buffer_size(nullptr, audio_tgt.channels, out_count, audio_tgt.fmt, 0);
         int len2;
         if (out_size < 0) {
             av_log_error("av_samples_get_buffer_size failed\n");
@@ -1179,11 +1196,11 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
         // 如果音频同步后，采样点数量需要改变，那么让 重采样器帮我们补偿（多了就填充空白样本点，少了就删除几个样本点）
         if (wanted_nb_samples != af->frame->nb_samples) {
             /*
-             * (wanted_nb_samples - af->frame->nb_samples) * is->audio_tgt.freq / af->frame->sample_rate 是重采样后要补充多少个样本点
-             * wanted_nb_samples * is->audio_tgt.freq / af->frame->sample_rate 是 af->frame->nb_samples 重采样后的样本数点数
+             * (wanted_nb_samples - af->frame->nb_samples) * audio_tgt.freq / af->frame->sample_rate 是重采样后要补充多少个样本点
+             * wanted_nb_samples * audio_tgt.freq / af->frame->sample_rate 是 af->frame->nb_samples 重采样后的样本数点数
              */
-            if (swr_set_compensation(is->swr_ctx, (wanted_nb_samples - af->frame->nb_samples) * is->audio_tgt.freq / af->frame->sample_rate,
-                wanted_nb_samples * is->audio_tgt.freq / af->frame->sample_rate) < 0) {
+            if (swr_set_compensation(*p_swr_ctx, (wanted_nb_samples - af->frame->nb_samples) * audio_tgt.freq / af->frame->sample_rate,
+                wanted_nb_samples * audio_tgt.freq / af->frame->sample_rate) < 0) {
                 av_log_error("swr_set_compensation failed\n");
                 return -1;
             }
@@ -1196,7 +1213,7 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
         if (!is->audio_buf1)
             return AVERROR(ENOMEM);
         // 进行重采样，out_count 并不是说真的要还给我们这么多个样本点，而是说 out 的最大值是 out_count
-        len2 = swr_convert(is->swr_ctx, out, out_count, in, af->frame->nb_samples);
+        len2 = swr_convert(*p_swr_ctx, out, out_count, in, af->frame->nb_samples);
         if (len2 < 0) {
             av_log_error("swr_convert failed\n");
             return -1;
@@ -1208,12 +1225,12 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
          */
         if (len2 == out_count) {
             av_log_warning("audio_buffer is probably too small\n");
-            if (swr_init(is->swr_ctx) < 0)
-                swr_free(&is->swr_ctx);
+            if (swr_init(*p_swr_ctx) < 0)
+                swr_free(p_swr_ctx);
         }
         is->audio_buf = is->audio_buf1;
         // 本次重采样后的样本点总的字节大小
-        resampled_data_size = len2 * is->audio_tgt.channels * av_get_bytes_per_sample(is->audio_tgt.fmt);
+        resampled_data_size = len2 * audio_tgt.channels * av_get_bytes_per_sample(audio_tgt.fmt);
         // 如果不需要重采样，则直接使用原始的音频数据，数据字节大小也就是当前音频帧的字节大小
     } else {
         is->audio_buf = af->frame->data[0];
@@ -1523,6 +1540,9 @@ void VideoCtl::stream_close(VideoState *is) {
     av_free(is->filename);
 
     av_free(is);
+
+    // 关闭 stem 资源
+    CloseStemSource();
 }
 
 void VideoCtl::stream_component_close(VideoState *is, int stream_index) {
@@ -2189,6 +2209,10 @@ void VideoCtl::OnStop()
     qDebug() << "play stop";
     m_play_loop = false;
     m_stop_emitted = true; // 标记已发送停止信号
+    // 只重置音频模式标志，让 audio_decode_frame 切回原始源
+    // 不在此处调用 CloseStemSource，因为 SDL 音频回调可能仍在读取 stem 队列
+    // 实际的资源清理在 stream_close（SDL 音频关闭后）中进行
+    m_audio_mode = AUDIO_ORIGINAL;
 }
 
 void VideoCtl::OnUserStop()
@@ -2334,6 +2358,11 @@ void VideoCtl::stream_seek(VideoState *is, int64_t pos, int64_t rel) {
         is->seek_req = 1;
         // 不管现在因为什么阻塞住了，都需要结束阻塞，开始处理seek请求
         SDL_CondSignal(is->continue_read_thread);
+
+        // 联动 seek stem 源
+        if (m_audio_mode != AUDIO_ORIGINAL && m_stem.active) {
+            seekStemSource(pos);
+        }
     }
 }
 
@@ -2520,5 +2549,330 @@ void VideoCtl::update_speed(float speed) {
         set_clock_speed(&m_cur_stream->audclk, speed);
     }
     emit SigSpeed(m_playback_rate);
+}
+
+// ==================== Stem 音频源相关方法 ====================
+
+void VideoCtl::OnSwitchAudioMode(int mode)
+{
+    AudioMode newMode = (AudioMode)mode;
+
+    if (newMode == m_audio_mode) {
+        return; // 模式没有变化
+    }
+
+    if (newMode == AUDIO_ORIGINAL) {
+        // 切回原声：先标记模式切回，让音频回调停止读取 stem 队列
+        m_audio_mode = AUDIO_ORIGINAL;
+        m_stem.active = false;
+        // 等待一个短暂的缓冲周期，确保音频回调已切回原始源
+        av_usleep(50000); // 50ms
+        // 然后安全关闭 stem 资源
+        CloseStemSource();
+        emit SigAudioModeChanged(mode);
+        return;
+    }
+
+    // 需要切换到 stem 模式
+    if (m_cur_stream == nullptr) {
+        return; // 当前没有播放
+    }
+
+    QString stemPath = AudioSeparator::GetInstance()->getStemPath(m_current_file, newMode);
+    if (stemPath.isEmpty() || !QFile::exists(stemPath)) {
+        av_log_warning("Stem file not found: %s\n", stemPath.toUtf8().constData());
+        return;
+    }
+
+    // 先关闭之前的 stem（如果有的话）
+    if (m_stem.active) {
+        m_audio_mode = AUDIO_ORIGINAL;
+        m_stem.active = false;
+        av_usleep(50000); // 50ms，等待音频回调切回原始源
+        CloseStemSource();
+    }
+
+    // 打开新的 stem 源
+    if (OpenStemSource(stemPath)) {
+        m_audio_mode = newMode;
+        m_stem_file_path = stemPath;
+
+        // seek stem 到当前视频播放位置
+        if (m_cur_stream) {
+            double pos = get_master_clock(m_cur_stream);
+            if (!std::isnan(pos)) {
+                seekStemSource((int64_t)(pos * AV_TIME_BASE));
+            }
+        }
+
+        emit SigAudioModeChanged(mode);
+    } else {
+        // 打开失败，切回原声并通知 UI
+        m_audio_mode = AUDIO_ORIGINAL;
+        emit SigAudioModeChanged(AUDIO_ORIGINAL);
+    }
+}
+
+bool VideoCtl::OpenStemSource(const QString &stemPath)
+{
+    StemAudioSource &stem = m_stem;
+    int ret;
+
+    // 打开 stem 文件
+    ret = avformat_open_input(&stem.fmt_ctx, stemPath.toUtf8().constData(), nullptr, nullptr);
+    if (ret < 0) {
+        av_log_error("Cannot open stem file: %s\n", stemPath.toUtf8().constData());
+        return false;
+    }
+
+    ret = avformat_find_stream_info(stem.fmt_ctx, nullptr);
+    if (ret < 0) {
+        av_log_error("Cannot find stream info in stem file\n");
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    // 查找音频流
+    stem.stream_index = av_find_best_stream(stem.fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+    if (stem.stream_index < 0) {
+        av_log_error("No audio stream found in stem file\n");
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    stem.audio_st = stem.fmt_ctx->streams[stem.stream_index];
+
+    // 打开解码器
+    AVCodecContext *avctx = avcodec_alloc_context3(nullptr);
+    if (!avctx) {
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    ret = avcodec_parameters_to_context(avctx, stem.audio_st->codecpar);
+    if (ret < 0) {
+        avcodec_free_context(&avctx);
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    av_codec_set_pkt_timebase(avctx, stem.audio_st->time_base);
+
+    const AVCodec *codec = avcodec_find_decoder(avctx->codec_id);
+    if (!codec) {
+        av_log_error("Unsupported codec in stem file\n");
+        avcodec_free_context(&avctx);
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    AVDictionary *opts = nullptr;
+    av_dict_set(&opts, "threads", "auto", 0);
+    ret = avcodec_open2(avctx, codec, &opts);
+    av_dict_free(&opts);
+    if (ret < 0) {
+        avcodec_free_context(&avctx);
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    stem.codec_ctx = avctx;
+
+    // 初始化 stem 包队列
+    if (packet_queue_init(&stem.audioq) < 0) {
+        avcodec_free_context(&stem.codec_ctx);
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    // 初始化 stem 帧队列
+    if (frame_queue_init(&stem.sampq, &stem.audioq, SAMPLE_QUEUE_SIZE, 1) < 0) {
+        packet_queue_destroy(&stem.audioq);
+        avcodec_free_context(&stem.codec_ctx);
+        avformat_close_input(&stem.fmt_ctx);
+        return false;
+    }
+
+    // 创建条件变量
+    stem.continue_read_thread = SDL_CreateCond();
+
+    // 初始化解码器
+    decoder_init(&stem.auddec, avctx, &stem.audioq, stem.continue_read_thread);
+    stem.auddec.start_pts = stem.audio_st->start_time;
+    stem.auddec.start_pts_tb = stem.audio_st->time_base;
+
+    // 设置 stem 源参数
+    stem.audio_src.freq = avctx->sample_rate;
+    stem.audio_src.channels = avctx->channels;
+    stem.audio_src.channel_layout = avctx->channel_layout;
+    stem.audio_src.fmt = avctx->sample_fmt;
+
+    // 启动包队列
+    packet_queue_start(&stem.audioq);
+
+    // 启动 stem 读取线程和解码线程
+    stem.active = true;
+    m_stem_read_thread = std::thread(&VideoCtl::stem_read_thread, this, &stem);
+    stem.auddec.decode_thread = std::thread(&VideoCtl::stem_audio_thread, this, &stem);
+
+    av_log_info("Stem source opened: %s\n", stemPath.toUtf8().constData());
+    return true;
+}
+
+void VideoCtl::CloseStemSource()
+{
+    StemAudioSource &stem = m_stem;
+
+    // 用 fmt_ctx 判断是否有资源需要清理，而不是用 active
+    // 因为调用方（OnSwitchAudioMode）会先将 active 设为 false 通知音频回调切回原始源，
+    // 此时 active 已经是 false，但资源仍然需要清理
+    if (!stem.fmt_ctx) {
+        return;
+    }
+
+    stem.active = false;
+    m_audio_mode = AUDIO_ORIGINAL;
+    m_stem_file_path.clear();
+
+    // 1. 中止包队列，停止读取
+    packet_queue_abort(&stem.audioq);
+
+    // 2. 唤醒可能阻塞的读取线程
+    if (stem.continue_read_thread) {
+        SDL_CondSignal(stem.continue_read_thread);
+    }
+
+    // 3. 等待读取线程结束
+    if (m_stem_read_thread.joinable()) {
+        m_stem_read_thread.join();
+    }
+
+    // 4. 使用 decoder_abort 停止解码线程（内部会 join decode_thread）
+    decoder_abort(&stem.auddec, &stem.sampq);
+    decoder_destroy(&stem.auddec);
+
+    // 5. 清理重采样器
+    if (stem.swr_ctx) {
+        swr_free(&stem.swr_ctx);
+    }
+
+    // 6. 关闭文件
+    if (stem.fmt_ctx) {
+        avformat_close_input(&stem.fmt_ctx);
+    }
+
+    // 7. 销毁队列
+    packet_queue_destroy(&stem.audioq);
+    frame_queue_destory(&stem.sampq);
+
+    // 8. 销毁条件变量
+    if (stem.continue_read_thread) {
+        SDL_DestroyCond(stem.continue_read_thread);
+    }
+
+    // 重置
+    stem.fmt_ctx = nullptr;
+    stem.codec_ctx = nullptr;
+    stem.stream_index = -1;
+    stem.audio_st = nullptr;
+    stem.swr_ctx = nullptr;
+    stem.continue_read_thread = nullptr;
+    memset(&stem.audio_src, 0, sizeof(AudioParams));
+
+    av_log_info("Stem source closed\n");
+}
+
+void VideoCtl::stem_read_thread(StemAudioSource *stem)
+{
+    AVPacket pkt1, *pkt = &pkt1;
+    int ret;
+
+    while (stem->active) {
+        // 处理 seek 请求
+        if (m_stem_seek_req) {
+            int64_t seek_pos = m_stem_seek_pos;
+            m_stem_seek_req = false;
+
+            // flush 解码器
+            packet_queue_flush(&stem->audioq);
+            avcodec_flush_buffers(stem->codec_ctx);
+
+            // seek stem 文件
+            int64_t target = av_rescale_q(seek_pos, AV_TIME_BASE_Q, stem->audio_st->time_base);
+            ret = av_seek_frame(stem->fmt_ctx, stem->stream_index, target, AVSEEK_FLAG_BACKWARD);
+            if (ret < 0) {
+                av_log_error("Stem seek failed\n");
+            }
+        }
+
+        // 限制队列大小（与 read_thread 逻辑一致）
+        if (stem->audioq.size > MAX_QUEUE_SIZE ||
+            stream_has_enough_packets(stem->audio_st, stem->stream_index, &stem->audioq)) {
+            SDL_Delay(10);
+            continue;
+        }
+
+        ret = av_read_frame(stem->fmt_ctx, pkt);
+        if (ret < 0) {
+            if ((ret == AVERROR_EOF || avio_feof(stem->fmt_ctx->pb))) {
+                // 文件读取结束，放入空包冲刷解码器
+                packet_queue_put_nullpacket(&stem->audioq, stem->stream_index);
+            }
+            if (stem->fmt_ctx->pb && stem->fmt_ctx->pb->error) {
+                break;
+            }
+            SDL_Delay(10);
+            continue;
+        }
+
+        if (pkt->stream_index == stem->stream_index) {
+            packet_queue_put(&stem->audioq, pkt);
+        } else {
+            av_packet_unref(pkt);
+        }
+    }
+}
+
+int VideoCtl::stem_audio_thread(void *arg)
+{
+    StemAudioSource *stem = (StemAudioSource*)arg;
+    AVFrame *frame = av_frame_alloc();
+    Frame *af;
+    int got_frame = 0;
+    AVRational tb;
+
+    if (!frame)
+        return AVERROR(ENOMEM);
+
+    do {
+        if ((got_frame = decoder_decode_frame(&stem->auddec, frame, nullptr)) < 0)
+            goto the_end;
+        if (got_frame) {
+            tb = {1, frame->sample_rate};
+            if (!((af = frame_queue_peek_writable(&stem->sampq))))
+                goto the_end;
+            af->pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+            af->pos = av_frame_get_pkt_pos(frame);
+            af->serial = stem->auddec.pkt_serial;
+            af->duration = av_q2d({frame->nb_samples, frame->sample_rate});
+
+            av_frame_move_ref(af->frame, frame);
+            frame_queue_push(&stem->sampq);
+        }
+    } while (stem->active);
+
+the_end:
+    av_frame_free(&frame);
+    return 0;
+}
+
+void VideoCtl::seekStemSource(int64_t pos)
+{
+    m_stem_seek_pos = pos;
+    m_stem_seek_req = true;
+    // 唤醒 stem 读取线程
+    if (m_stem.continue_read_thread) {
+        SDL_CondSignal(m_stem.continue_read_thread);
+    }
 }
 

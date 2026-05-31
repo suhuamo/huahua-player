@@ -238,6 +238,25 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="AudioModeBtn">
+       <property name="minimumSize">
+        <size>
+         <width>30</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>原声</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QTimeEdit" name="VideoPlayTimeTimeEdit">
        <property name="maximumSize">
         <size>

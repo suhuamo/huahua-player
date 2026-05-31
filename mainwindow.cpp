@@ -7,6 +7,7 @@
 #include<QLabel>
 #include<QPropertyAnimation>
 #include<QTimer>
+#include<QMessageBox>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -18,7 +19,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_playlist(this),
     m_move_drag(false),
-    m_menu(this)
+    m_menu(this),
+    m_pending_audio_mode(AUDIO_ORIGINAL),
+    m_separation_dialog(nullptr)
 {
     ui->setupUi(this);
     /*
@@ -171,6 +174,31 @@ void MainWindow::connectSignalSlots()
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoPlaySeconds, ui->CtrlBarWid, &CtrlBar::OnVideoPlaySeconds, Qt::QueuedConnection);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVolumeChanged);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigFrameDimensionsChanged, ui->ShowWid, &Show::OnFrameDimensionsChanged, Qt::QueuedConnection);
+
+    // 音频模式切换
+    connect(ui->CtrlBarWid, &CtrlBar::SigAudioModeChanged, this, &MainWindow::SlotOnAudioModeChanged);
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigAudioModeChanged, ui->CtrlBarWid, &CtrlBar::OnAudioModeChanged, Qt::QueuedConnection);
+    // 播放停止时重置音频模式按钮
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, [this]() { ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL); });
+    connect(VideoCtl::GetInstance(), &VideoCtl::SigUserStopFinished, ui->CtrlBarWid, [this]() { ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL); });
+
+    // AudioSeparator 信号
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationProgress, this, [this](int modelIndex, int percent) {
+        if (m_separation_dialog) {
+            m_separation_dialog->setProgress(modelIndex, percent);
+        }
+    });
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationStemsReady, this, [this](const QString &) {
+        if (m_separation_dialog) {
+            m_separation_dialog->setGeneratingAccompaniment();
+        }
+    });
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationCompleted, this, &MainWindow::SlotOnSeparationCompleted);
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationFailed, this, [this](const QString &error) {
+        if (m_separation_dialog) {
+            m_separation_dialog->setFailed(error);
+        }
+    });
 
 }
 
@@ -325,4 +353,100 @@ void MainWindow::initMenu()
     this->addAction(act_open_file);
     this->addAction(act_open_stream);
     this->addAction(act_full_screen);
+}
+
+void MainWindow::SlotOnAudioModeChanged(int mode)
+{
+    // 切换到原声模式
+    if (mode == AUDIO_ORIGINAL) {
+        VideoCtl::GetInstance()->OnSwitchAudioMode(AUDIO_ORIGINAL);
+        return;
+    }
+
+    // 检查是否有文件正在播放
+    QString currentFile = ui->ShowWid->getCurrentFile();
+    if (currentFile.isEmpty()) {
+        ui->ShowWid->ShowToast(tr("请先打开文件"));
+        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        return;
+    }
+
+    // 检查 demucs 是否可用
+    if (!AudioSeparator::GetInstance()->isDemucsAvailable()) {
+        QMessageBox::warning(this, tr("环境检查"), tr("未检测到 demucs，请安装 Python 和 demucs"));
+        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        return;
+    }
+
+    // 检查是否已缓存
+    if (AudioSeparator::GetInstance()->isCached(currentFile)) {
+        // 已缓存，直接切换
+        QString stemPath = AudioSeparator::GetInstance()->getStemPath(currentFile, (AudioMode)mode);
+        if (!stemPath.isEmpty() && QFile::exists(stemPath)) {
+            VideoCtl::GetInstance()->OnSwitchAudioMode(mode);
+        } else {
+            QMessageBox::warning(this, tr("文件错误"), tr("缺少对应的 stem 文件"));
+            ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        }
+        return;
+    }
+
+    // 未缓存，需要启动分离
+    if (AudioSeparator::GetInstance()->isSeparating()) {
+        QMessageBox::information(this, tr("音频分离"), tr("已有分离任务正在进行，请稍候"));
+        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        return;
+    }
+
+    // 记录待切换的模式，分离完成后自动切换
+    m_pending_audio_mode = mode;
+    AudioSeparator::GetInstance()->startSeparation(currentFile);
+
+    // 弹出分离进度对话框
+    if (!m_separation_dialog) {
+        m_separation_dialog = new SeparationProgressDialog(this);
+        connect(m_separation_dialog, &SeparationProgressDialog::SigCancelRequested, this, [this]() {
+            AudioSeparator::GetInstance()->cancelSeparation();
+            m_separation_dialog->close();
+            m_separation_dialog->deleteLater();
+            m_separation_dialog = nullptr;
+        });
+        connect(m_separation_dialog, &QDialog::finished, this, [this]() {
+            if (m_separation_dialog) {
+                m_separation_dialog->deleteLater();
+                m_separation_dialog = nullptr;
+            }
+        });
+    }
+    // 设置文件和目标模式信息
+    QString modeName;
+    switch ((AudioMode)mode) {
+    case AUDIO_VOCALS:        modeName = tr("人声"); break;
+    case AUDIO_ACCOMPANIMENT: modeName = tr("伴奏"); break;
+    case AUDIO_DRUMS:         modeName = tr("鼓点"); break;
+    case AUDIO_BASS:          modeName = tr("贝斯"); break;
+    case AUDIO_OTHER:         modeName = tr("其他"); break;
+    default:                  modeName = tr("未知"); break;
+    }
+    m_separation_dialog->setFileInfo(currentFile, modeName);
+    m_separation_dialog->show();
+}
+
+void MainWindow::SlotOnSeparationCompleted(const QString &filePath)
+{
+    QString currentFile = ui->ShowWid->getCurrentFile();
+    if (filePath != currentFile) {
+        return; // 不是当前文件的分离结果，忽略
+    }
+
+    // 自动切换到待切换的模式
+    if (m_pending_audio_mode != AUDIO_ORIGINAL) {
+        VideoCtl::GetInstance()->OnSwitchAudioMode(m_pending_audio_mode);
+        m_pending_audio_mode = AUDIO_ORIGINAL;
+    }
+
+    // 更新进度对话框状态
+    if (m_separation_dialog) {
+        m_separation_dialog->setCompleted();
+    }
 }

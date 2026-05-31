@@ -71,21 +71,55 @@ bool CtrlBar::initUi()
     ui->SettingBtn->setToolTip("设置");
     ui->VolumeBtn->setToolTip("点击静音");
     ui->SpeedBtn->setToolTip("倍速");
+    ui->AudioModeBtn->setToolTip("音频模式");
 
     // 创建倍速下拉菜单，步长由 SPEED_MENU_SCALE 控制
     m_speed_menu = new QMenu(this);
     m_speed_menu->setObjectName("SpeedMenu");
+    // 使用 QActionGroup 实现互斥单选，防止点击已选中项时取消选中
+    QActionGroup *speedGroup = new QActionGroup(this);
     for (float speed = SPEED_MENU_MIN; speed <= SPEED_MENU_MAX + 0.001f; speed += SPEED_MENU_SCALE) {
         QString text = QString("%1x").arg(speed, 0, 'f', 1);
         QAction *action = m_speed_menu->addAction(text);
         action->setData(speed);
         action->setCheckable(true);
+        speedGroup->addAction(action);
         // 启动时默认选择1.0倍速
         if (qFuzzyCompare(speed, 1.0f)) {
             action->setChecked(true);
         }
     }
     connect(m_speed_menu, &QMenu::triggered, this, &CtrlBar::OnSpeedMenuTriggered);
+
+    // 创建音频模式下拉菜单
+    m_audio_mode_menu = new QMenu(this);
+    m_audio_mode_menu->setObjectName("AudioModeMenu");
+
+    // 使用 QActionGroup 实现互斥单选，防止点击已选中项时取消选中
+    QActionGroup *audioModeGroup = new QActionGroup(this);
+
+    struct AudioModeItem {
+        QString text;
+        int mode;
+    };
+    QVector<AudioModeItem> audioModes = {
+        {tr("原声"), AUDIO_ORIGINAL},
+        {tr("人声"), AUDIO_VOCALS},
+        {tr("伴奏"), AUDIO_ACCOMPANIMENT},
+        {tr("鼓点"), AUDIO_DRUMS},
+        {tr("贝斯"), AUDIO_BASS},
+        {tr("其他"), AUDIO_OTHER}
+    };
+    for (const auto &item : audioModes) {
+        QAction *action = m_audio_mode_menu->addAction(item.text);
+        action->setData(item.mode);
+        action->setCheckable(true);
+        audioModeGroup->addAction(action);
+        if (item.mode == AUDIO_ORIGINAL) {
+            action->setChecked(true);
+        }
+    }
+    connect(m_audio_mode_menu, &QMenu::triggered, this, &CtrlBar::OnAudioModeMenuTriggered);
 
     return true;
 }
@@ -307,4 +341,39 @@ void CtrlBar::OnVolumeChanged(double percent)
     // 显示音量提示
     int volumePercent = static_cast<int>(percent * 100);
     emit SigShowToast(QString("声音：%1%").arg(volumePercent));
+}
+
+void CtrlBar::on_AudioModeBtn_clicked()
+{
+    // 弹出音频模式下拉菜单，显示在按钮上方
+    QPoint pos = ui->AudioModeBtn->mapToGlobal(QPoint(0, 0));
+    pos.setY(pos.y() - m_audio_mode_menu->sizeHint().height());
+    m_audio_mode_menu->exec(pos);
+}
+
+void CtrlBar::OnAudioModeMenuTriggered(QAction* action)
+{
+    int mode = action->data().toInt();
+    emit SigAudioModeChanged(mode);
+}
+
+void CtrlBar::OnAudioModeChanged(int mode)
+{
+    // 更新按钮文字
+    QString text;
+    switch ((AudioMode)mode) {
+    case AUDIO_ORIGINAL:      text = tr("原声"); break;
+    case AUDIO_VOCALS:        text = tr("人声"); break;
+    case AUDIO_ACCOMPANIMENT: text = tr("伴奏"); break;
+    case AUDIO_DRUMS:         text = tr("鼓点"); break;
+    case AUDIO_BASS:          text = tr("贝斯"); break;
+    case AUDIO_OTHER:         text = tr("其他"); break;
+    default:                  text = tr("原声"); break;
+    }
+    ui->AudioModeBtn->setText(text);
+
+    // 同步菜单选中状态
+    for (QAction *action : m_audio_mode_menu->actions()) {
+        action->setChecked(action->data().toInt() == mode);
+    }
 }

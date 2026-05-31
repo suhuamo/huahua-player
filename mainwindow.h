@@ -10,6 +10,8 @@
 
 #include"playlist.h"
 #include"title.h"
+#include"audioseparator.h"
+#include"separationprogressdialog.h"
 
 
 namespace Ui {
@@ -38,6 +40,8 @@ private:
     void SlotOnCloseBtnClicked();
     void SlotOnMenuBtnClicked();
     void SlotOnPlayListCtrlBtnClicked();
+    void SlotOnAudioModeChanged(int mode);
+    void SlotOnSeparationCompleted(const QString &filePath);
 //    初始化菜单，并添加 action 的槽函数
     void initMenu();
 signals:
@@ -55,6 +59,8 @@ private:
     bool m_move_drag; //移动窗口标志
     QPoint m_drag_position; //在哪个位置开始移动
     QMenu m_menu;    //菜单，不是通过.ui文件加载的，而是代码里面直接渲染的
+    int m_pending_audio_mode; // 等待分离完成后切换的音频模式
+    SeparationProgressDialog *m_separation_dialog; // 音频分离进度对话框
 };
 
 #endif // MAINWINDOW_H

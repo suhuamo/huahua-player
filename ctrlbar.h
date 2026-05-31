@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QMenu>
+#include "audioseparator.h"
 
 // 倍速菜单参数
 #define SPEED_MENU_MIN           (0.5)     // 菜单最小倍速
@@ -34,6 +35,7 @@ public:
     void OnSeekForward(int targetSeconds);
     void OnSeekBack(int targetSeconds);
     void OnVolumeChanged(double percent);  // 快捷键音量变化
+    void OnAudioModeChanged(int mode);     // 音频模式切换回调（更新按钮文字）
 private:
     bool initUi();
     void connectSignalSlots();
@@ -49,9 +51,13 @@ signals:
     void SigPlayVolume(double percent);
     void SigPlaySeek(double percent);
     void SigShowToast(const QString &text);  // 显示提示信息的信号
+    void SigAudioModeChanged(int mode);      // 音频模式切换信号
 private slots:
     void on_SpeedBtn_clicked();
     void OnSpeedMenuTriggered(QAction* action);
+
+    void on_AudioModeBtn_clicked();
+    void OnAudioModeMenuTriggered(QAction* action);
 
     void on_PlayOrPauseBtn_clicked();
 
@@ -63,6 +69,7 @@ private:
     int m_total_play_seconds;
     int m_last_play_seconds; //上次播放时间
     QMenu *m_speed_menu;     // 倍速下拉菜单
+    QMenu *m_audio_mode_menu; // 音频模式下拉菜单
 };
 
 #endif // CTRLBAR_H
