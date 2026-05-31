@@ -102,6 +102,17 @@ void CtrlBar::OnStopFinished()
 {
     ui->PlaySlider->setValue(0);
     QTime stopTime(0, 0, 0);
+    ui->VideoPlayTimeTimeEdit->setTime(stopTime);
+    GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
+    ui->PlayOrPauseBtn->setToolTip("点击播放");
+
+    m_last_play_seconds = -1;
+}
+
+void CtrlBar::OnUserStopFinished()
+{
+    ui->PlaySlider->setValue(0);
+    QTime stopTime(0, 0, 0);
     ui->VideoTotalTimeTimeEdit->setTime(stopTime);
     ui->VideoPlayTimeTimeEdit->setTime(stopTime);
     GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));

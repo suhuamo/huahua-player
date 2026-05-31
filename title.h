@@ -16,6 +16,7 @@ public:
     ~Title();
     bool Init();
     void SlotOnPlay(QString filePath);
+    void SlotOnStop(); // 用户主动停止时清空文件名
 private:
     void paintEvent(QPaintEvent *event);
     void resizeEvent(QResizeEvent *event);

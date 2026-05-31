@@ -18,6 +18,7 @@ public:
     void OnSpeed(float speed);
     void OnPauseStat(bool paused);
     void OnStopFinished();
+    void OnUserStopFinished(); // 用户主动停止
     void OnVideopVolume(double percent);
     void OnVideoTotalSeconds(int seconds);
     void OnVideoPlaySeconds(int seconds);

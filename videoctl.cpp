@@ -1492,7 +1492,11 @@ void VideoCtl::do_exit(VideoState *is) {
 
     // 这里不销毁窗口，因为窗口我们需要一直渲染
     m_video_open = false; // 标记视频窗口已关闭--其实是播放状态的关闭，窗口实际还在使用
-    emit SigStopFinished();
+    if (m_user_stop) {
+        emit SigUserStopFinished();
+    } else {
+        emit SigStopFinished();
+    }
 }
 
 void VideoCtl::stream_close(VideoState *is) {

@@ -50,6 +50,10 @@ void Title::SlotOnPlay(QString filePath)
 
 }
 
+void Title::SlotOnStop()
+{
+    ui->MovieNameLab->clear();
+}
 bool Title::initUi()
 {
     //    鼠标悬浮在按钮上显示的文本

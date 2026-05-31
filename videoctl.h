@@ -62,7 +62,8 @@ signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
     void SigPauseStat(bool paused);
-    void SigStopFinished(); // 结束播放
+    void SigStopFinished(); // 自然播放结束
+    void SigUserStopFinished(); // 用户主动停止播放
     void SigStop();
     void SigVideoTotalSeconds(int seconds);
     void SigVideoPlaySeconds(int seconds);
