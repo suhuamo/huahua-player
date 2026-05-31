@@ -2,6 +2,12 @@
 #define CTRLBAR_H
 
 #include <QWidget>
+#include <QMenu>
+
+// 倍速菜单参数
+#define SPEED_MENU_MIN           (0.5)     // 菜单最小倍速
+#define SPEED_MENU_MAX           (3.0)     // 菜单最大倍速
+#define SPEED_MENU_SCALE         (0.5)     // 菜单倍速步长
 
 namespace Ui {
 class CtrlBar;
@@ -38,6 +44,7 @@ signals:
     void SigBackBtnClicked();
     void SigNextBtnClicked();
     void SigSpeed();
+    void SigSpeedChanged(float speed); // 选择指定倍速
     void SigPlayOrPause();
     void SigStop();
     void SigPlayVolume(double percent);
@@ -45,6 +52,7 @@ signals:
     void SigShowToast(const QString &text);  // 显示提示信息的信号
 private slots:
     void on_SpeedBtn_clicked();
+    void OnSpeedMenuTriggered(QAction* action);
 
     void on_PlayOrPauseBtn_clicked();
 
@@ -55,6 +63,7 @@ private:
     double _last_volume_percent;    //变为静音前的音量大小
     int m_total_play_seconds;
     int m_last_play_seconds; //上次播放时间
+    QMenu *m_speed_menu;     // 倍速下拉菜单
 };
 
 #endif // CTRLBAR_H

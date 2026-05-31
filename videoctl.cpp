@@ -2173,6 +2173,14 @@ void VideoCtl::OnSpeed()
     update_speed(speed);
 }
 
+void VideoCtl::OnSetSpeed(float speed)
+{
+    if (speed < PLAYBACK_RATE_MIN || speed > PLAYBACK_RATE_MAX) {
+        return;
+    }
+    update_speed(speed);
+}
+
 void VideoCtl::OnPause()
 {
     if (m_cur_stream == nullptr) {

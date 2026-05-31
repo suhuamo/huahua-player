@@ -43,6 +43,11 @@ bool CtrlBar::Init()
 void CtrlBar::OnSpeed(float speed)
 {
     ui->SpeedBtn->setText(QString("倍数:%1").arg(speed));
+
+    // 同步菜单选中状态
+    for (QAction *action : m_speed_menu->actions()) {
+        action->setChecked(qFuzzyCompare(action->data().toFloat(), speed));
+    }
 }
 
 bool CtrlBar::initUi()
@@ -66,6 +71,21 @@ bool CtrlBar::initUi()
     ui->SettingBtn->setToolTip("设置");
     ui->VolumeBtn->setToolTip("点击静音");
     ui->SpeedBtn->setToolTip("倍速");
+
+    // 创建倍速下拉菜单，步长由 SPEED_MENU_SCALE 控制
+    m_speed_menu = new QMenu(this);
+    m_speed_menu->setObjectName("SpeedMenu");
+    for (float speed = SPEED_MENU_MIN; speed <= SPEED_MENU_MAX + 0.001f; speed += SPEED_MENU_SCALE) {
+        QString text = QString("%1x").arg(speed, 0, 'f', 1);
+        QAction *action = m_speed_menu->addAction(text);
+        action->setData(speed);
+        action->setCheckable(true);
+        // 启动时默认选择1.0倍速
+        if (qFuzzyCompare(speed, 1.0f)) {
+            action->setChecked(true);
+        }
+    }
+    connect(m_speed_menu, &QMenu::triggered, this, &CtrlBar::OnSpeedMenuTriggered);
 
     return true;
 }
@@ -231,8 +251,17 @@ void CtrlBar::OnVolumeSliderValueChanged()
 
 void CtrlBar::on_SpeedBtn_clicked()
 {
-//    设置变速
-    emit SigSpeed();
+    // 弹出倍速下拉菜单，显示在按钮上方
+    QPoint pos = ui->SpeedBtn->mapToGlobal(QPoint(0, 0));
+    pos.setY(pos.y() - m_speed_menu->sizeHint().height());
+    m_speed_menu->exec(pos);
+}
+
+void CtrlBar::OnSpeedMenuTriggered(QAction* action)
+{
+    float speed = action->data().toFloat();
+    emit SigSpeedChanged(speed);
+    emit SigShowToast(QString("倍速：%1x").arg(speed, 0, 'f', speed == int(speed) ? 1 : 2));
 }
 
 void CtrlBar::on_PlayOrPauseBtn_clicked()

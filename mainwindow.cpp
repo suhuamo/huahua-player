@@ -151,6 +151,7 @@ void MainWindow::connectSignalSlots()
     connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);
     connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &m_playlist, &Playlist::SlotOnNextPlay);
     connect(ui->CtrlBarWid, &CtrlBar::SigSpeed, VideoCtl::GetInstance(), &VideoCtl::OnSpeed);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSpeedChanged, VideoCtl::GetInstance(), &VideoCtl::OnSetSpeed);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
     connect(ui->CtrlBarWid, &CtrlBar::SigStop, VideoCtl::GetInstance(), &VideoCtl::OnUserStop);
     connect(ui->CtrlBarWid, &CtrlBar::SigPlayVolume, VideoCtl::GetInstance(), &VideoCtl::OnPlayVolume);

@@ -110,3 +110,23 @@ QSlider::handle:horizontal:hover {
     margin-top: -3px;
     margin-bottom: -2px;
 }
+
+/*倍速下拉菜单*/
+QMenu#SpeedMenu {
+    background-color: #2e2f37;
+    border: 1px solid #555;
+    padding: 2px;
+}
+
+QMenu#SpeedMenu::item {
+    padding: 4px 20px;
+    color: white;
+}
+
+QMenu#SpeedMenu::item:selected {
+    background-color: #4169E1;
+}
+
+QMenu#SpeedMenu::item:checked {
+    color: #5DCCFF;
+}

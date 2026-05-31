@@ -48,6 +48,7 @@ public:
     int get_target_channels();
     bool is_normal_playback_rate();
     void OnSpeed();
+    void OnSetSpeed(float speed); // 设置指定倍速
     void OnPause();
     void OnStop();
     void OnUserStop(); // 用户主动点击停止按钮
