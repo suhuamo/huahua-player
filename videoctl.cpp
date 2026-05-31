@@ -123,7 +123,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_frame_sar({0, 1}),
     m_frame_flip_v(false),
     m_last_frame(nullptr),
-    m_idle_loop(false){
+    m_idle_loop(false),
+    m_user_stop(false){
 }
 
 bool VideoCtl::init() {
@@ -213,6 +214,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
     m_play_wid = play_wid;
     m_stop_emitted = false; // 重置停止标志
     m_current_file = filename;
+    m_user_stop = false; // 重置用户停止标志
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -1456,7 +1458,8 @@ void VideoCtl::do_exit(VideoState *is) {
                 av_log_info("Initialized %s renderer.\n", info.name);
 
             // 用 m_last_frame 重新创建纹理（av_frame_ref 保证了帧数据在 stream_close 后仍然有效）
-            if (m_last_frame && m_last_frame->width > 0 && m_last_frame->height > 0) {
+            // 用户主动停止时不保留最后一帧，清空画面
+            if (!m_user_stop && m_last_frame && m_last_frame->width > 0 && m_last_frame->height > 0) {
                 av_log_info("do_exit: recreating texture from m_last_frame, size=%d x %d, format=%d\n",
                     m_last_frame->width, m_last_frame->height, m_last_frame->format);
                 int sdlPixFmt = m_last_frame->format == AV_PIX_FMT_YUV420P ? SDL_PIXELFORMAT_YV12 : SDL_PIXELFORMAT_ARGB8888;
@@ -1471,6 +1474,16 @@ void VideoCtl::do_exit(VideoState *is) {
                 } else {
                     av_log_error("do_exit: SDL_CreateTexture failed: %s\n", SDL_GetError());
                 }
+            } else if (m_user_stop) {
+                // 用户主动停止：清空画面，释放最后一帧引用
+                av_log_info("do_exit: user stop, clearing display\n");
+                av_frame_free(&m_last_frame);
+                m_frame_width = 0;
+                m_frame_height = 0;
+                // 清空渲染器为黑色
+                SDL_SetRenderDrawColor(m_renderer, 0, 0, 0, 255);
+                SDL_RenderClear(m_renderer);
+                SDL_RenderPresent(m_renderer);
             } else {
                 av_log_info("do_exit: no m_last_frame to recreate texture, m_last_frame=%p\n", (void*)m_last_frame);
             }
@@ -2174,6 +2187,13 @@ void VideoCtl::OnStop()
     qDebug() << "play stop";
     m_play_loop = false;
     m_stop_emitted = true; // 标记已发送停止信号
+}
+
+void VideoCtl::OnUserStop()
+{
+    qDebug() << "user stop";
+    m_user_stop = true; // 标记用户主动停止
+    OnStop();
 }
 
 void VideoCtl::OnPlayVolume(double percent)

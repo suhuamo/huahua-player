@@ -50,6 +50,7 @@ public:
     void OnSpeed();
     void OnPause();
     void OnStop();
+    void OnUserStop(); // 用户主动点击停止按钮
     void OnPlayVolume(double percent);
     void OnPlaySeek(double percent);
     void OnSeekForward();
@@ -151,6 +152,7 @@ private:
     bool m_frame_flip_v;               // 当前帧是否垂直翻转
     AVFrame* m_last_frame;             // 最后一帧的引用（播放结束后用于重建纹理，av_frame_ref 保持数据有效）
     bool m_idle_loop;                   // 空闲事件循环运行标志（true=运行中，类似 m_play_loop）
+    bool m_user_stop;                   // 用户主动停止标志（区分自然播放结束和用户点击停止）
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };
