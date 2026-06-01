@@ -188,6 +188,7 @@ private:
     std::thread m_stem_read_thread;     // stem 读取线程
     bool m_stem_seek_req;               // stem 是否需要 seek
     int64_t m_stem_seek_pos;            // stem seek 目标位置（AV_TIME_BASE）
+    bool m_audio_force_play = true;//音频强制播放一帧，配合step使用
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

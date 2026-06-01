@@ -128,7 +128,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_audio_mode(AUDIO_ORIGINAL),
     m_stem_file_path(""),
     m_stem_seek_req(false),
-    m_stem_seek_pos(0){
+    m_stem_seek_pos(0),
+    m_audio_force_play(true){
 }
 
 bool VideoCtl::init() {
@@ -1111,7 +1112,7 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
      * 注意，暂停并不是说马上停止什么都不干，暂停指的是当前帧播放完成后，不播放下一帧了，
      * 故这里虽然返回-1了，外面还有当前帧的缓存数据，所以此刻外面还在播放，当当前帧播放完成了后才会没有数据播放，因为这里 return -1 了嘛，读取不到下一帧了
      */
-    if (is->paused)
+    if (is->paused && m_audio_force_play)
         return -1;
     do {
 #if defined(_WIN32)
@@ -1246,6 +1247,7 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
     else
         is->audio_clock = NAN;
     is->audio_clock_serial = af->serial;
+    m_audio_force_play = true;//强制播放一帧事件完成
 
     return resampled_data_size;
 }
@@ -2314,6 +2316,8 @@ void VideoCtl::stream_toggle_pause(VideoState *is) {
         set_clock(&is->vidclk, get_clock(&is->vidclk), is->vidclk.serial);
     }
     is->paused = is->audclk.paused = is->vidclk.paused = !is->paused;
+    // 标记需要强制播放一帧音频
+    m_audio_force_play = false;
 }
 
 void VideoCtl::toggle_pause(VideoState *is) {
