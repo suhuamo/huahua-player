@@ -75,7 +75,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl) {
             vfprintf(log_file, fmt, vl);
             fflush(log_file);
         }
-        
+
         // 输出到窗口
         fprintf(stderr, "[%s] ", time_buf);
         vfprintf(stderr, fmt, vl);
@@ -189,7 +189,7 @@ VideoCtl::~VideoCtl() {
     // 清理渲染器
     if(m_renderer) {
         SDL_DestroyRenderer(m_renderer);
-        m_renderer = nullptr;   
+        m_renderer = nullptr;
     }
     // 清理窗口
     if(m_window) {
@@ -1106,6 +1106,55 @@ int VideoCtl::audio_decode_frame(VideoState *is) {
     bool useStem = (m_audio_mode != AUDIO_ORIGINAL && m_stem.active);
     FrameQueue *src_sampq = useStem ? &m_stem.sampq : &is->sampq;
     PacketQueue *src_audioq = useStem ? &m_stem.audioq : &is->audioq;
+
+    // 使用 stem 时，PTS 感知地消费原声 sampq，防止队列积压导致 read_thread 阻塞
+    // 核心思路：只 drain PTS 落后于当前播放位置的过时帧，保留当前播放位置附近的帧
+    // 这样切回原声时队列中就是正确位置的数据，无需 seek，避免"画面回退到关键帧"
+    if (useStem) {
+        double play_pos = get_clock(&is->audclk);
+        while (true) {
+            SDL_LockMutex(is->sampq.mutex);
+            int remaining = is->sampq.size - is->sampq.rindex_shown;
+            if (remaining <= 0) {
+                SDL_UnlockMutex(is->sampq.mutex);
+                break;
+            }
+
+            // 判断队首帧是否已过时（帧结束时间 < 当前播放位置）
+            bool should_drain;
+            if (std::isnan(play_pos)) {
+                // 播放位置未知时回退到固定阈值逻辑
+                should_drain = remaining > 2;
+            } else {
+                Frame *front_frame = &is->sampq.queue[is->sampq.rindex];
+                if (!std::isnan(front_frame->pts)) {
+                    double frame_end = front_frame->pts + front_frame->duration;
+                    should_drain = frame_end < play_pos;
+                } else {
+                    // 帧 PTS 未知时保守处理，不 drain
+                    should_drain = false;
+                }
+            }
+
+            if (should_drain) {
+                // 处理 keep_last 标志（同 frame_queue_next 逻辑）
+                if (is->sampq.keep_last && !is->sampq.rindex_shown) {
+                    is->sampq.rindex_shown = 1;
+                } else {
+                    frame_queue_unref_item(&is->sampq.queue[is->sampq.rindex]);
+                    if (++is->sampq.rindex == is->sampq.max_size)
+                        is->sampq.rindex = 0;
+                    is->sampq.size--;
+                }
+                SDL_CondSignal(is->sampq.cond);
+                SDL_UnlockMutex(is->sampq.mutex);
+            } else {
+                // 帧未过时，停止 drain
+                SDL_UnlockMutex(is->sampq.mutex);
+                break;
+            }
+        }
+    }
 
     /*
      * mark：这里就是音频暂停时候的处理，此时返回-1，则外面就获取不到播放的音频数据了
@@ -2252,11 +2301,11 @@ void VideoCtl::OnSeekForward()
     {
         return;
     }
-    
+
     double current_time = get_master_clock(m_cur_stream);
     int target_seconds = (int)(current_time + SEEK_INCR);
     stream_seek_forward();
-    
+
     // 发出快进完成信号
     emit SigSeekForwardCompleted(target_seconds);
 }
@@ -2267,12 +2316,12 @@ void VideoCtl::OnSeekBack()
     {
         return;
     }
-    
+
     double current_time = get_master_clock(m_cur_stream);
     int target_seconds = (int)(current_time - SEEK_INCR);
     if (target_seconds < 0) target_seconds = 0;
     stream_seek_back();
-    
+
     // 发出快退完成信号
     emit SigSeekBackCompleted(target_seconds);
 }
