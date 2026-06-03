@@ -151,6 +151,9 @@ private:
     void sub_volume();
     void update_speed(float speed);
 
+    // 硬件加速相关
+    bool initHwDevice();              // 初始化硬件设备上下文（D3D11VA/DXVA2）
+
 private:
     static VideoCtl* m_instance;
     bool m_init;
@@ -189,6 +192,11 @@ private:
     bool m_stem_seek_req;               // stem 是否需要 seek
     int64_t m_stem_seek_pos;            // stem seek 目标位置（AV_TIME_BASE）
     bool m_audio_force_play = true;//音频强制播放一帧，配合step使用
+
+    // 硬件加速相关
+    bool m_hw_accel_enabled;       // 是否启用硬件加速
+    AVPixelFormat m_hw_pix_fmt;    // 硬件解码像素格式（D3D11VA_VLD / DXVA2_VLD）
+    AVBufferRef *m_hw_device_ctx;  // 硬件设备上下文（全局共享，每个流引用一次）
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

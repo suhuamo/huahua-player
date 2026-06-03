@@ -24,6 +24,7 @@ extern "C"{
 #include "libavdevice/avdevice.h"
 #include "libswscale/swscale.h"
 #include "libavutil/opt.h"
+#include "libavutil/hwcontext.h"
 // #include "libavcodec/avfft.h"
 #include "libswresample/swresample.h"
 #include "SDL.h"

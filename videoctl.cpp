@@ -128,6 +128,9 @@ VideoCtl::VideoCtl(QObject *parent):
     m_audio_mode(AUDIO_ORIGINAL),
     m_stem_file_path(""),
     m_stem_seek_req(false),
+    m_hw_accel_enabled(false),
+    m_hw_pix_fmt(AV_PIX_FMT_NONE),
+    m_hw_device_ctx(nullptr),
     m_stem_seek_pos(0),
     m_audio_force_play(true){
 }
@@ -159,9 +162,51 @@ bool VideoCtl::init() {
     m_screen_width = 1920;
     m_screen_height = 1080;
 
+    // 初始化硬件加速设备上下文（D3D11VA/DXVA2），失败则自动回退到软件解码
+    initHwDevice();
+
     m_init = true;
     return true;
 }
+
+/**
+ * @brief 初始化硬件加速设备上下文
+ *
+ * 按优先级尝试创建 D3D11VA（Windows 8+，现代 API）→ DXVA2（兼容性好）
+ * 硬件设备上下文。
+ * 成功后，后续视频流打开时会通过 av_buffer_ref 为每个 AVCodecContext
+ * 分配独立的引用，由 avcodec_free_context 自动释放。
+ *
+ * @return true 硬件加速可用  false 不可用，将使用软件解码
+ */
+bool VideoCtl::initHwDevice() {
+    // 优先级：D3D11VA > DXVA2
+    static const struct {
+        enum AVHWDeviceType type;
+        enum AVPixelFormat pix_fmt;
+    } hw_configs[] = {
+        { AV_HWDEVICE_TYPE_D3D11VA, AV_PIX_FMT_D3D11VA_VLD },
+        { AV_HWDEVICE_TYPE_DXVA2,   AV_PIX_FMT_DXVA2_VLD   },
+    };
+
+    for (const auto &cfg : hw_configs) {
+        int ret = av_hwdevice_ctx_create(&m_hw_device_ctx, cfg.type, NULL, NULL, 0);
+        if (ret >= 0) {
+            m_hw_accel_enabled = true;
+            m_hw_pix_fmt = cfg.pix_fmt;
+            av_log_info("[HWAccel] Hardware acceleration enabled: %s, pixel format: %s\n",
+                        av_hwdevice_get_type_name(cfg.type),
+                        av_get_pix_fmt_name(m_hw_pix_fmt));
+            return true;
+        }
+        av_log_warning("[HWAccel] Failed to create %s device context (error %d), trying next\n",
+                       av_hwdevice_get_type_name(cfg.type), ret);
+    }
+
+    av_log_warning("[HWAccel] Hardware acceleration not available, using software decoding\n");
+    return false;
+}
+
 
 bool VideoCtl::ConnectionSignalSlots()
 {
@@ -198,6 +243,11 @@ VideoCtl::~VideoCtl() {
     }
     //清理日志文件
     fclose(log_file);
+    // 释放硬件加速设备上下文
+    if (m_hw_device_ctx) {
+        av_buffer_unref(&m_hw_device_ctx);
+        m_hw_device_ctx = nullptr;
+    }
     // 清理 SDL
     SDL_Quit();
 }
@@ -708,8 +758,25 @@ int VideoCtl::stream_component_open(VideoState *is, int stream_index) {
     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO || avctx->codec_type == AVMEDIA_TYPE_AUDIO)
     av_dict_set(&opts, "refcounted_frames", "1", 0);
 
+    // 硬件加速：为视频流设置 hw_device_ctx，FFmpeg 会自动选择硬件解码器
+    // 每个 avctx 持有独立的 buffer 引用，avcodec_free_context 时自动释放
+    if (avctx->codec_type == AVMEDIA_TYPE_VIDEO && m_hw_accel_enabled && m_hw_device_ctx) {
+        avctx->hw_device_ctx = av_buffer_ref(m_hw_device_ctx);
+        if (!avctx->hw_device_ctx) {
+            av_log_warning("[HWAccel] Failed to reference hw device context, falling back to software decoding\n");
+        } else {
+            av_log_info("[HWAccel] hw_device_ctx set for video stream (codec: %s)\n", codec->name);
+        }
+    }
+
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0)
         goto fail;
+    // 打印实际使用的解码器名称，区分硬件解码器（如 h264_d3d11va）和软件解码器（如 h264）
+    if (avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+        av_log_info("[VideoDecoder] Using decoder: %s (%s)\n",
+                   avctx->codec->name,
+                   avctx->hw_device_ctx ? "hardware" : "software");
+    }
     // 判断是否有未识别的参数
     if ((t = av_dict_get(opts, "", NULL, AV_DICT_IGNORE_SUFFIX))) {
         av_log_error("Option %s not found\n", t->key);
@@ -1407,6 +1474,7 @@ the_end:
 int VideoCtl::video_thread(void *arg) {
     VideoState *is = (VideoState *) arg;
     AVFrame *frame = av_frame_alloc();
+    AVFrame *sw_frame = nullptr; // 硬件加速：用于 GPU→CPU 帧传输的临时帧
     double pts;
     double duration;
     int ret;
@@ -1424,6 +1492,33 @@ int VideoCtl::video_thread(void *arg) {
             goto out;
         if (!ret)
             continue;
+
+        // ========== 硬件加速：GPU 帧 → CPU 帧 ==========
+        // 如果当前帧来自硬件解码器，其 hw_frames_ctx 不为空（帧数据在 GPU 显存中），
+        // 需要通过 av_hwframe_transfer_data 将数据从 GPU 显存传回 CPU 系统内存。
+        // 注意：不能用 frame->format 精确匹配 m_hw_pix_fmt，因为 D3D11VA 解码器
+        // 输出的帧格式可能是 AV_PIX_FMT_D3D11（而非 AV_PIX_FMT_D3D11VA_VLD），
+        // 使用 hw_frames_ctx 判断是 FFmpeg 官方推荐的方式，且兼容所有硬件格式。
+        if (frame->hw_frames_ctx) {
+            if (!sw_frame)
+                sw_frame = av_frame_alloc();
+            if (!sw_frame) {
+                av_log_error("[HWAccel] Failed to allocate software frame\n");
+                goto out;
+            }
+            if (av_hwframe_transfer_data(sw_frame, frame, 0) < 0) {
+                av_log_error("[HWAccel] Failed to transfer hardware frame to system memory\n");
+                av_frame_unref(sw_frame);
+                av_frame_unref(frame);
+                continue; // 跳过此帧，继续解码下一帧
+            }
+            // 复制元数据（pts、pkt_dts 等）到软件帧
+            av_frame_copy_props(sw_frame, frame);
+            av_frame_unref(frame);
+            // 将软件帧数据移动到 frame，后续逻辑与纯软件解码完全一致
+            av_frame_move_ref(frame, sw_frame);
+        }
+        // ========== 硬件加速结束 ==========
         // 正常来说应该有帧率的，即 1/25，那么得到的 duration 就是 40 ms，但是如果没有，那么我们只能标记为0代表有问题
         duration = (frame_rate.num && frame_rate.den ? av_q2d({frame_rate.den, frame_rate.num}) : 0.0);
         // 这个 pts 是计算真实时间播放的时长，单位秒
@@ -1439,6 +1534,7 @@ int VideoCtl::video_thread(void *arg) {
     }
 out:
     av_frame_free(&frame);
+    av_frame_free(&sw_frame); // 释放硬件加速临时帧
 
     return 0;
 }
@@ -2066,7 +2162,9 @@ void VideoCtl::video_image_display(VideoState *is) {
     calculate_display_rect(&rect, is->xleft, is->ytop, m_cur_stream->width, m_cur_stream->height, vp->width, vp->height, vp->sar);
 
     if (!vp->uploaded) {
-        int sdlPixFmt = vp->frame->format == AV_PIX_FMT_YUV420P ? SDL_PIXELFORMAT_YV12 : SDL_PIXELFORMAT_ARGB8888;
+        // NV12 等 hw_transfer 输出格式走 default 分支（sws_scale→BGRA），无需 SDL 原生 NV12 支持
+        int sdlPixFmt = vp->frame->format == AV_PIX_FMT_YUV420P ? SDL_PIXELFORMAT_YV12 :
+                         SDL_PIXELFORMAT_ARGB8888;
         // 创建纹理（纹理由 VideoCtl 统一管理，不存储在 VideoState 中）
         if (realloc_texture(&m_vid_texture, sdlPixFmt, vp->frame->width, vp->frame->height, SDL_BLENDMODE_NONE, 0) < 0)
             return;
@@ -2168,6 +2266,8 @@ int VideoCtl::upload_texture(SDL_Texture *tex, AVFrame *frame, struct SwsContext
                 ret = SDL_UpdateTexture(tex, NULL, frame->data[0], frame->linesize[0]);
             }
             break;
+        // NV12 等 hw_transfer 输出格式：SDL2 版本较旧不支持原生 NV12，
+        // 走 default 分支通过 sws_scale 转换为 BGRA 即可
         default:
             /* This should only happen if we are not using avfilter... */
             *img_convert_ctx = sws_getCachedContext(*img_convert_ctx,
