@@ -68,18 +68,14 @@ signals:
     void SigSetFilterSharpen(bool enabled);
     void SigResetFilter();
 private slots:
-    void on_SpeedBtn_clicked();
     void OnSpeedMenuTriggered(QAction* action);
-
-    void on_AudioModeBtn_clicked();
     void OnAudioModeMenuTriggered(QAction* action);
-
-    void on_FilterBtn_clicked();
     void OnFilterMenuTriggered(QAction* action);
-
-    void on_PlayOrPauseBtn_clicked();
-
-    void on_OverPlayBtn_clicked();
+    void OnSpeedBtnClicked();
+    void OnAudioModeBtnClicked();
+    void OnFilterBtnClicked();
+    void OnPlayOrPauseBtnClicked();
+    void OnOverPlayBtnClicked();
 
 private:
     Ui::CtrlBar *ui;

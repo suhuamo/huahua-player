@@ -192,6 +192,13 @@ void CtrlBar::connectSignalSlots()
     connect(ui->NextBtn, &QPushButton::clicked, this, &CtrlBar::SigNextBtnClicked);
     connect(ui->VolumeSlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnVolumeSliderValueChanged);
     connect(ui->PlaySlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnPlaySliderValueChanged);
+    
+    // 按钮点击信号显式连接
+    connect(ui->SpeedBtn, &QPushButton::clicked, this, &CtrlBar::OnSpeedBtnClicked);
+    connect(ui->AudioModeBtn, &QPushButton::clicked, this, &CtrlBar::OnAudioModeBtnClicked);
+    connect(ui->FilterBtn, &QPushButton::clicked, this, &CtrlBar::OnFilterBtnClicked);
+    connect(ui->PlayOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::OnPlayOrPauseBtnClicked);
+    connect(ui->OverPlayBtn, &QPushButton::clicked, this, &CtrlBar::OnOverPlayBtnClicked);
 }
 
 void CtrlBar::OnPauseStat(bool paused)
@@ -342,7 +349,7 @@ void CtrlBar::OnVolumeSliderValueChanged()
     emit SigShowToast(QString("声音：%1%").arg(volumePercent));
 }
 
-void CtrlBar::on_SpeedBtn_clicked()
+void CtrlBar::OnSpeedBtnClicked()
 {
     // 弹出倍速下拉菜单，显示在按钮上方
     QPoint pos = ui->SpeedBtn->mapToGlobal(QPoint(0, 0));
@@ -357,12 +364,12 @@ void CtrlBar::OnSpeedMenuTriggered(QAction* action)
     emit SigShowToast(QString("倍速：%1x").arg(speed, 0, 'f', speed == int(speed) ? 1 : 2));
 }
 
-void CtrlBar::on_PlayOrPauseBtn_clicked()
+void CtrlBar::OnPlayOrPauseBtnClicked()
 {
     emit SigPlayOrPause();
 }
 
-void CtrlBar::on_OverPlayBtn_clicked()
+void CtrlBar::OnOverPlayBtnClicked()
 {
     emit SigStop();
 }
@@ -402,7 +409,7 @@ void CtrlBar::OnVolumeChanged(double percent)
     emit SigShowToast(QString("声音：%1%").arg(volumePercent));
 }
 
-void CtrlBar::on_AudioModeBtn_clicked()
+void CtrlBar::OnAudioModeBtnClicked()
 {
     // 弹出音频模式下拉菜单，显示在按钮上方
     QPoint pos = ui->AudioModeBtn->mapToGlobal(QPoint(0, 0));
@@ -410,7 +417,7 @@ void CtrlBar::on_AudioModeBtn_clicked()
     m_audio_mode_menu->exec(pos);
 }
 
-void CtrlBar::on_FilterBtn_clicked()
+void CtrlBar::OnFilterBtnClicked()
 {
     // 同步滤镜菜单状态
     SyncFilterMenuState();
