@@ -3106,25 +3106,25 @@ void VideoCtl::ResetVideoFilter()
 // 滤镜槽函数实现
 void VideoCtl::OnSetFilterBrightness(double value)
 {
-    m_filter_params.brightness = qBound(FilterParams::MIN_BRIGHTNESS, m_filter_params.brightness + value, FilterParams::MAX_BRIGHTNESS);
+    m_filter_params.brightness = qBound(FilterConstants::MIN_BRIGHTNESS, m_filter_params.brightness + value, FilterConstants::MAX_BRIGHTNESS);
     SetVideoFilterParams(m_filter_params);
 }
 
 void VideoCtl::OnSetFilterContrast(double value)
 {
-    m_filter_params.contrast = qBound(FilterParams::MIN_CONTRAST, m_filter_params.contrast + value, FilterParams::MAX_CONTRAST);
+    m_filter_params.contrast = qBound(FilterConstants::MIN_CONTRAST, m_filter_params.contrast + value, FilterConstants::MAX_CONTRAST);
     SetVideoFilterParams(m_filter_params);
 }
 
 void VideoCtl::OnSetFilterSaturation(double value)
 {
-    m_filter_params.saturation = qBound(FilterParams::MIN_SATURATION, m_filter_params.saturation + value, FilterParams::MAX_SATURATION);
+    m_filter_params.saturation = qBound(FilterConstants::MIN_SATURATION, m_filter_params.saturation + value, FilterConstants::MAX_SATURATION);
     SetVideoFilterParams(m_filter_params);
 }
 
 void VideoCtl::OnSetFilterBlur(double value)
 {
-    m_filter_params.blur_radius = qBound(FilterParams::MIN_BLUR_RADIUS, value, FilterParams::MAX_BLUR_RADIUS);
+    m_filter_params.blur_radius = qBound(FilterConstants::MIN_BLUR_RADIUS, value, FilterConstants::MAX_BLUR_RADIUS);
     SetVideoFilterParams(m_filter_params);
 }
 

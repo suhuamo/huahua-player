@@ -27,24 +27,27 @@ enum VideoFilterType {
     FILTER_SHARPEN,         // 锐化
 };
 
-// 滤镜参数结构
-struct FilterParams {
+// 滤镜常量命名空间
+namespace FilterConstants {
     // 默认值常量
-    static constexpr double DEFAULT_BRIGHTNESS = 0.0;
-    static constexpr double DEFAULT_CONTRAST = 1.0;
-    static constexpr double DEFAULT_SATURATION = 1.0;
-    static constexpr double DEFAULT_BLUR_RADIUS = 0.0;
+    constexpr double DEFAULT_BRIGHTNESS = 0.0;
+    constexpr double DEFAULT_CONTRAST = 1.0;
+    constexpr double DEFAULT_SATURATION = 1.0;
+    constexpr double DEFAULT_BLUR_RADIUS = 0.0;
 
     // 参数范围常量
-    static constexpr double MIN_BRIGHTNESS = -1.0;
-    static constexpr double MAX_BRIGHTNESS = 1.0;
-    static constexpr double MIN_CONTRAST = 0.0;
-    static constexpr double MAX_CONTRAST = 2.0;
-    static constexpr double MIN_SATURATION = 0.0;
-    static constexpr double MAX_SATURATION = 2.0;
-    static constexpr double MIN_BLUR_RADIUS = 0.0;
-    static constexpr double MAX_BLUR_RADIUS = 10.0;
+    constexpr double MIN_BRIGHTNESS = -1.0;
+    constexpr double MAX_BRIGHTNESS = 1.0;
+    constexpr double MIN_CONTRAST = 0.0;
+    constexpr double MAX_CONTRAST = 2.0;
+    constexpr double MIN_SATURATION = 0.0;
+    constexpr double MAX_SATURATION = 2.0;
+    constexpr double MIN_BLUR_RADIUS = 0.0;
+    constexpr double MAX_BLUR_RADIUS = 10.0;
+}
 
+// 滤镜参数结构
+struct FilterParams {
     double brightness;      // 亮度 [MIN_BRIGHTNESS, MAX_BRIGHTNESS], 默认 DEFAULT_BRIGHTNESS
     double contrast;        // 对比度 [MIN_CONTRAST, MAX_CONTRAST], 默认 DEFAULT_CONTRAST
     double saturation;      // 饱和度 [MIN_SATURATION, MAX_SATURATION], 默认 DEFAULT_SATURATION
@@ -62,10 +65,10 @@ struct FilterParams {
     }
 
     void reset() {
-        brightness = DEFAULT_BRIGHTNESS;
-        contrast = DEFAULT_CONTRAST;
-        saturation = DEFAULT_SATURATION;
-        blur_radius = DEFAULT_BLUR_RADIUS;
+        brightness = FilterConstants::DEFAULT_BRIGHTNESS;
+        contrast = FilterConstants::DEFAULT_CONTRAST;
+        saturation = FilterConstants::DEFAULT_SATURATION;
+        blur_radius = FilterConstants::DEFAULT_BLUR_RADIUS;
         grayscale = false;
         edge_detect = false;
         hflip = false;
@@ -76,10 +79,10 @@ struct FilterParams {
     }
 
     bool isActive() const {
-        return brightness != DEFAULT_BRIGHTNESS ||
-               contrast != DEFAULT_CONTRAST ||
-               saturation != DEFAULT_SATURATION ||
-               blur_radius > DEFAULT_BLUR_RADIUS ||
+        return brightness != FilterConstants::DEFAULT_BRIGHTNESS ||
+               contrast != FilterConstants::DEFAULT_CONTRAST ||
+               saturation != FilterConstants::DEFAULT_SATURATION ||
+               blur_radius > FilterConstants::DEFAULT_BLUR_RADIUS ||
                grayscale || edge_detect || hflip ||
                vflip || sepia || negative || sharpen;
     }

@@ -94,9 +94,9 @@ bool VideoFilter::buildFilterGraph() {
     // 构建滤镜链描述
     std::string filter_desc;
 
-    if (m_params.brightness != FilterParams::DEFAULT_BRIGHTNESS ||
-        m_params.contrast != FilterParams::DEFAULT_CONTRAST ||
-        m_params.saturation != FilterParams::DEFAULT_SATURATION) {
+    if (m_params.brightness != FilterConstants::DEFAULT_BRIGHTNESS ||
+        m_params.contrast != FilterConstants::DEFAULT_CONTRAST ||
+        m_params.saturation != FilterConstants::DEFAULT_SATURATION) {
         char eq_args[256];
         snprintf(eq_args, sizeof(eq_args),
                  "eq=brightness=%f:contrast=%f:saturation=%f",
