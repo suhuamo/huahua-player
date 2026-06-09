@@ -132,7 +132,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_hw_pix_fmt(AV_PIX_FMT_NONE),
     m_hw_device_ctx(nullptr),
     m_stem_seek_pos(0),
-    m_audio_force_play(true){
+    m_audio_force_play(true),
+    m_video_filter(nullptr){
 }
 
 bool VideoCtl::init() {
@@ -222,6 +223,12 @@ VideoCtl::~VideoCtl() {
     // 空闲循环会在 SDL_WaitEventTimeout 的 100ms 超时后检查 m_idle_loop 自然退出
     if (m_play_loop_thread.joinable()) {
         m_play_loop_thread.join();
+    }
+
+    // 清理视频滤镜
+    if (m_video_filter) {
+        delete m_video_filter;
+        m_video_filter = nullptr;
     }
 
     // 清理视频纹理
@@ -1475,6 +1482,7 @@ int VideoCtl::video_thread(void *arg) {
     VideoState *is = (VideoState *) arg;
     AVFrame *frame = av_frame_alloc();
     AVFrame *sw_frame = nullptr; // 硬件加速：用于 GPU→CPU 帧传输的临时帧
+    AVFrame *filter_frame = nullptr; // 用于滤镜处理的帧
     double pts;
     double duration;
     int ret;
@@ -1483,6 +1491,11 @@ int VideoCtl::video_thread(void *arg) {
     AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, NULL);
     if (!frame)
         return AVERROR(ENOMEM);
+
+    // 初始化视频滤镜
+    if (!m_video_filter) {
+        m_video_filter = new VideoFilter();
+    }
 
     while (true) {
 
@@ -1519,6 +1532,32 @@ int VideoCtl::video_thread(void *arg) {
             av_frame_move_ref(frame, sw_frame);
         }
         // ========== 硬件加速结束 ==========
+
+        // ========== 视频滤镜处理 ==========
+        if (m_video_filter && m_filter_params.isActive()) {
+            // 延迟初始化滤镜（首次收到帧时）
+            if (!m_video_filter->isActive()) {
+                if (!m_video_filter->init(frame->width, frame->height,
+                                          (AVPixelFormat)frame->format, tb)) {
+                    av_log_error("[VideoFilter] Failed to initialize video filter\n");
+                } else {
+                    m_video_filter->updateParams(m_filter_params);
+                }
+            }
+
+            // 应用滤镜
+            if (m_video_filter->isActive()) {
+                if (!filter_frame) {
+                    filter_frame = av_frame_alloc();
+                }
+                if (filter_frame && m_video_filter->applyFilter(frame, filter_frame)) {
+                    av_frame_unref(frame);
+                    av_frame_move_ref(frame, filter_frame);
+                }
+            }
+        }
+        // ========== 滤镜处理结束 ==========
+
         // 正常来说应该有帧率的，即 1/25，那么得到的 duration 就是 40 ms，但是如果没有，那么我们只能标记为0代表有问题
         duration = (frame_rate.num && frame_rate.den ? av_q2d({frame_rate.den, frame_rate.num}) : 0.0);
         // 这个 pts 是计算真实时间播放的时长，单位秒
@@ -1535,6 +1574,7 @@ int VideoCtl::video_thread(void *arg) {
 out:
     av_frame_free(&frame);
     av_frame_free(&sw_frame); // 释放硬件加速临时帧
+    av_frame_free(&filter_frame); // 释放滤镜处理帧
 
     return 0;
 }
@@ -3027,5 +3067,105 @@ void VideoCtl::seekStemSource(int64_t pos)
     if (m_stem.continue_read_thread) {
         SDL_CondSignal(m_stem.continue_read_thread);
     }
+}
+
+// 设置视频滤镜参数
+void VideoCtl::SetVideoFilterParams(const FilterParams &params)
+{
+    m_filter_params = params;
+    
+    // 如果滤镜已初始化，更新参数
+    if (m_video_filter) {
+        m_video_filter->updateParams(params);
+    }
+}
+
+// 获取当前滤镜参数
+FilterParams VideoCtl::GetVideoFilterParams() const
+{
+    return m_filter_params;
+}
+
+// 重置视频滤镜
+void VideoCtl::ResetVideoFilter()
+{
+    m_filter_params.reset();
+    
+    // 如果滤镜已初始化，重置滤镜
+    if (m_video_filter) {
+        m_video_filter->updateParams(m_filter_params);
+    }
+}
+
+// 滤镜槽函数实现
+void VideoCtl::OnSetFilterBrightness(double value)
+{
+    m_filter_params.brightness = qBound(FilterParams::MIN_BRIGHTNESS, m_filter_params.brightness + value, FilterParams::MAX_BRIGHTNESS);
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterContrast(double value)
+{
+    m_filter_params.contrast = qBound(FilterParams::MIN_CONTRAST, m_filter_params.contrast + value, FilterParams::MAX_CONTRAST);
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterSaturation(double value)
+{
+    m_filter_params.saturation = qBound(FilterParams::MIN_SATURATION, m_filter_params.saturation + value, FilterParams::MAX_SATURATION);
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterBlur(double value)
+{
+    m_filter_params.blur_radius = qBound(FilterParams::MIN_BLUR_RADIUS, value, FilterParams::MAX_BLUR_RADIUS);
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterGrayscale(bool enabled)
+{
+    m_filter_params.grayscale = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterEdgeDetect(bool enabled)
+{
+    m_filter_params.edge_detect = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterHorizontalFlip(bool enabled)
+{
+    m_filter_params.hflip = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterVerticalFlip(bool enabled)
+{
+    m_filter_params.vflip = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterSepia(bool enabled)
+{
+    m_filter_params.sepia = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterNegative(bool enabled)
+{
+    m_filter_params.negative = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnSetFilterSharpen(bool enabled)
+{
+    m_filter_params.sharpen = enabled;
+    SetVideoFilterParams(m_filter_params);
+}
+
+void VideoCtl::OnResetFilter()
+{
+    ResetVideoFilter();
 }
 

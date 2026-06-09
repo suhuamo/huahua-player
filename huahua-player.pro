@@ -16,6 +16,7 @@ TEMPLATE = app
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
+DEFINES += __STDC_CONSTANT_MACROS
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -35,7 +36,8 @@ SOURCES += main.cpp\
     videoctl.cpp \
     sonic.cpp \
     audioseparator.cpp \
-    separationprogressdialog.cpp
+    separationprogressdialog.cpp \
+    vfilter.cpp
 
 HEADERS  += mainwindow.h \
     playlist.h \
@@ -49,7 +51,8 @@ HEADERS  += mainwindow.h \
     sonic.h \
     datactl.h \
     audioseparator.h \
-    separationprogressdialog.h
+    separationprogressdialog.h \
+    vfilter.h
 
 FORMS    += mainwindow.ui \
     playlist.ui \

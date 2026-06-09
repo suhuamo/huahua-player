@@ -15,6 +15,7 @@
 #include"sonic.h"
 #include"globalhelper.h"
 #include"audioseparator.h"
+#include"vfilter.h"
 
 using std::string;
 using std::cout;
@@ -85,6 +86,25 @@ public:
     void OnSwitchAudioMode(int mode); // 切换音频模式（原声/人声/伴奏等）
     bool OpenStemSource(const QString &stemPath); // 打开 stem 音频源
     void CloseStemSource(); // 关闭 stem 音频源
+
+    // 视频滤镜相关接口
+    void SetVideoFilterParams(const FilterParams &params); // 设置滤镜参数
+    FilterParams GetVideoFilterParams() const; // 获取当前滤镜参数
+    void ResetVideoFilter(); // 重置滤镜
+    
+    // 滤镜槽函数
+    void OnSetFilterBrightness(double value);
+    void OnSetFilterContrast(double value);
+    void OnSetFilterSaturation(double value);
+    void OnSetFilterBlur(double value);
+    void OnSetFilterGrayscale(bool enabled);
+    void OnSetFilterEdgeDetect(bool enabled);
+    void OnSetFilterHorizontalFlip(bool enabled);
+    void OnSetFilterVerticalFlip(bool enabled);
+    void OnSetFilterSepia(bool enabled);
+    void OnSetFilterNegative(bool enabled);
+    void OnSetFilterSharpen(bool enabled);
+    void OnResetFilter();
 signals:
     void SigStartPlay(QString strMsg);
     void SigSpeed(float speed);
@@ -197,6 +217,10 @@ private:
     bool m_hw_accel_enabled;       // 是否启用硬件加速
     AVPixelFormat m_hw_pix_fmt;    // 硬件解码像素格式（D3D11VA_VLD / DXVA2_VLD）
     AVBufferRef *m_hw_device_ctx;  // 硬件设备上下文（全局共享，每个流引用一次）
+
+    // 视频滤镜相关
+    VideoFilter* m_video_filter;    // 视频滤镜实例
+    FilterParams m_filter_params;   // 当前滤镜参数
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };

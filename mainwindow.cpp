@@ -139,6 +139,20 @@ void MainWindow::connectSignalSlots()
     connect(this, &MainWindow::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
     connect(this, &MainWindow::SigStep, VideoCtl::GetInstance(), &VideoCtl::OnStep);
     
+    // 滤镜功能信号连接（从CtrlBar连接到VideoCtl）
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterBrightness, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterBrightness);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterContrast, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterContrast);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSaturation, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSaturation);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterBlur, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterBlur);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterGrayscale, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterGrayscale);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterEdgeDetect, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterEdgeDetect);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterHorizontalFlip, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterHorizontalFlip);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterVerticalFlip, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterVerticalFlip);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSepia, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSepia);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterNegative, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterNegative);
+    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSharpen, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSharpen);
+    connect(ui->CtrlBarWid, &CtrlBar::SigResetFilter, VideoCtl::GetInstance(), &VideoCtl::OnResetFilter);
+    
     // 快捷键操作后显示 Toast（通过 VideoCtl 的状态信号）
     connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekForwardCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekForward);
     connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekBackCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekBack);

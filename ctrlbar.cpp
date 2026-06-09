@@ -1,6 +1,8 @@
 #include "ctrlbar.h"
 #include "ui_ctrlbar.h"
-#include"globalhelper.h"
+#include "globalhelper.h"
+#include "vfilter.h"
+#include"videoctl.h"
 
 CtrlBar::CtrlBar(QWidget *parent) :
     QWidget(parent),
@@ -72,6 +74,7 @@ bool CtrlBar::initUi()
     ui->VolumeBtn->setToolTip("点击静音");
     ui->SpeedBtn->setToolTip("倍速");
     ui->AudioModeBtn->setToolTip("音频模式");
+    ui->FilterBtn->setToolTip("滤镜");
 
     // 创建倍速下拉菜单，步长由 SPEED_MENU_SCALE 控制
     m_speed_menu = new QMenu(this);
@@ -120,6 +123,62 @@ bool CtrlBar::initUi()
         }
     }
     connect(m_audio_mode_menu, &QMenu::triggered, this, &CtrlBar::OnAudioModeMenuTriggered);
+
+    // 创建滤镜下拉菜单
+    m_filter_menu = new QMenu(this);
+    m_filter_menu->setObjectName("FilterMenu");
+
+    // 颜色调整子菜单
+    QMenu *color_submenu = m_filter_menu->addMenu(tr("颜色调整"));
+    QAction *act_brightness_up = color_submenu->addAction(tr("亮度 +"));
+    act_brightness_up->setData(QVariant::fromValue(QPair<int, double>(0, 0.1)));
+    QAction *act_brightness_down = color_submenu->addAction(tr("亮度 -"));
+    act_brightness_down->setData(QVariant::fromValue(QPair<int, double>(0, -0.1)));
+    QAction *act_contrast_up = color_submenu->addAction(tr("对比度 +"));
+    act_contrast_up->setData(QVariant::fromValue(QPair<int, double>(1, 0.1)));
+    QAction *act_contrast_down = color_submenu->addAction(tr("对比度 -"));
+    act_contrast_down->setData(QVariant::fromValue(QPair<int, double>(1, -0.1)));
+    QAction *act_saturation_up = color_submenu->addAction(tr("饱和度 +"));
+    act_saturation_up->setData(QVariant::fromValue(QPair<int, double>(2, 0.1)));
+    QAction *act_saturation_down = color_submenu->addAction(tr("饱和度 -"));
+    act_saturation_down->setData(QVariant::fromValue(QPair<int, double>(2, -0.1)));
+
+    // 特效子菜单
+    QMenu *effect_submenu = m_filter_menu->addMenu(tr("特效"));
+    QAction *act_grayscale = effect_submenu->addAction(tr("灰度"));
+    act_grayscale->setData(QVariant::fromValue(QPair<int, bool>(3, true)));
+    act_grayscale->setCheckable(true);
+    QAction *act_sepia = effect_submenu->addAction(tr("复古褐色"));
+    act_sepia->setData(QVariant::fromValue(QPair<int, bool>(4, true)));
+    act_sepia->setCheckable(true);
+    QAction *act_negative = effect_submenu->addAction(tr("负片效果"));
+    act_negative->setData(QVariant::fromValue(QPair<int, bool>(5, true)));
+    act_negative->setCheckable(true);
+    QAction *act_sharpen = effect_submenu->addAction(tr("锐化"));
+    act_sharpen->setData(QVariant::fromValue(QPair<int, bool>(6, true)));
+    act_sharpen->setCheckable(true);
+    QAction *act_blur = effect_submenu->addAction(tr("模糊"));
+    act_blur->setData(QVariant::fromValue(QPair<int, bool>(7, true)));
+    act_blur->setCheckable(true);
+    QAction *act_edge_detect = effect_submenu->addAction(tr("边缘检测"));
+    act_edge_detect->setData(QVariant::fromValue(QPair<int, bool>(8, true)));
+    act_edge_detect->setCheckable(true);
+
+    // 几何变换子菜单
+    QMenu *transform_submenu = m_filter_menu->addMenu(tr("几何变换"));
+    QAction *act_hflip = transform_submenu->addAction(tr("水平翻转"));
+    act_hflip->setData(QVariant::fromValue(QPair<int, bool>(9, true)));
+    act_hflip->setCheckable(true);
+    QAction *act_vflip = transform_submenu->addAction(tr("垂直翻转"));
+    act_vflip->setData(QVariant::fromValue(QPair<int, bool>(10, true)));
+    act_vflip->setCheckable(true);
+
+    // 重置滤镜
+    m_filter_menu->addSeparator();
+    QAction *act_reset_filter = m_filter_menu->addAction(tr("重置滤镜"));
+    act_reset_filter->setData(QVariant::fromValue(QPair<int, int>(11, 0)));
+
+    connect(m_filter_menu, &QMenu::triggered, this, &CtrlBar::OnFilterMenuTriggered);
 
     return true;
 }
@@ -349,6 +408,154 @@ void CtrlBar::on_AudioModeBtn_clicked()
     QPoint pos = ui->AudioModeBtn->mapToGlobal(QPoint(0, 0));
     pos.setY(pos.y() - m_audio_mode_menu->sizeHint().height());
     m_audio_mode_menu->exec(pos);
+}
+
+void CtrlBar::on_FilterBtn_clicked()
+{
+    // 同步滤镜菜单状态
+    SyncFilterMenuState();
+    
+    // 弹出滤镜下拉菜单，显示在按钮上方
+    QPoint pos = ui->FilterBtn->mapToGlobal(QPoint(0, 0));
+    pos.setY(pos.y() - m_filter_menu->sizeHint().height());
+    m_filter_menu->exec(pos);
+}
+
+void CtrlBar::SyncFilterMenuState()
+{
+    // 获取当前滤镜参数
+    FilterParams params = VideoCtl::GetInstance()->GetVideoFilterParams();
+    
+    // 更新所有可勾选的菜单选项状态
+    for (QAction *action : m_filter_menu->findChildren<QAction*>()) {
+        if (!action->isCheckable()) {
+            continue;
+        }
+        
+        QVariant data = action->data();
+        if (data.canConvert<QPair<int, bool>>()) {
+            QPair<int, bool> pair = data.value<QPair<int, bool>>();
+            int type = pair.first;
+            bool checked = false;
+            
+            switch (type) {
+            case 3: // 灰度
+                checked = params.grayscale;
+                break;
+            case 4: // 复古褐色
+                checked = params.sepia;
+                break;
+            case 5: // 负片效果
+                checked = params.negative;
+                break;
+            case 6: // 锐化
+                checked = params.sharpen;
+                break;
+            case 7: // 模糊
+                checked = params.blur_radius > 0;
+                break;
+            case 8: // 边缘检测
+                checked = params.edge_detect;
+                break;
+            case 9: // 水平翻转
+                checked = params.hflip;
+                break;
+            case 10: // 垂直翻转
+                checked = params.vflip;
+                break;
+            }
+            
+            action->setChecked(checked);
+        }
+    }
+}
+
+void CtrlBar::OnFilterMenuTriggered(QAction* action)
+{
+    QVariant data = action->data();
+    if (data.canConvert<QPair<int, double>>()) {
+        QPair<int, double> pair = data.value<QPair<int, double>>();
+        int type = pair.first;
+        double value = pair.second;
+        // 先发送参数更新信号
+        switch (type) {
+        case 0: // 亮度
+            emit SigSetFilterBrightness(value);
+            break;
+        case 1: // 对比度
+            emit SigSetFilterContrast(value);
+            break;
+        case 2: // 饱和度
+            emit SigSetFilterSaturation(value);
+            break;
+        }
+        // 获取更新后的参数并显示
+        FilterParams params = VideoCtl::GetInstance()->GetVideoFilterParams();
+        QString toastText;
+        switch (type) {
+        case 0: // 亮度
+            toastText = QString(tr("亮度: %1")).arg(QString::number(params.brightness, 'f', 2));
+            break;
+        case 1: // 对比度
+            toastText = QString(tr("对比度: %1")).arg(QString::number(params.contrast, 'f', 2));
+            break;
+        case 2: // 饱和度
+            toastText = QString(tr("饱和度: %1")).arg(QString::number(params.saturation, 'f', 2));
+            break;
+        }
+        emit SigShowToast(toastText);
+    } else if (data.canConvert<QPair<int, bool>>()) {
+        QPair<int, bool> pair = data.value<QPair<int, bool>>();
+        int type = pair.first;
+        bool enabled = action->isChecked(); // Qt会自动切换状态，直接获取即可
+        switch (type) {
+        case 3: // 灰度
+            emit SigSetFilterGrayscale(enabled);
+            emit SigShowToast(enabled ? tr("已启用灰度") : tr("已禁用灰度"));
+            break;
+        case 4: // 复古褐色
+            emit SigSetFilterSepia(enabled);
+            emit SigShowToast(enabled ? tr("已启用复古褐色") : tr("已禁用复古褐色"));
+            break;
+        case 5: // 负片效果
+            emit SigSetFilterNegative(enabled);
+            emit SigShowToast(enabled ? tr("已启用负片效果") : tr("已禁用负片效果"));
+            break;
+        case 6: // 锐化
+            emit SigSetFilterSharpen(enabled);
+            emit SigShowToast(enabled ? tr("已启用锐化") : tr("已禁用锐化"));
+            break;
+        case 7: // 模糊
+            emit SigSetFilterBlur(enabled ? 2.0 : 0.0);
+            emit SigShowToast(enabled ? tr("已启用模糊") : tr("已禁用模糊"));
+            break;
+        case 8: // 边缘检测
+            emit SigSetFilterEdgeDetect(enabled);
+            emit SigShowToast(enabled ? tr("已启用边缘检测") : tr("已禁用边缘检测"));
+            break;
+        case 9: // 水平翻转
+            emit SigSetFilterHorizontalFlip(enabled);
+            emit SigShowToast(enabled ? tr("已启用水平翻转") : tr("已禁用水平翻转"));
+            break;
+        case 10: // 垂直翻转
+            emit SigSetFilterVerticalFlip(enabled);
+            emit SigShowToast(enabled ? tr("已启用垂直翻转") : tr("已禁用垂直翻转"));
+            break;
+        }
+    } else if (data.canConvert<QPair<int, int>>()) {
+        QPair<int, int> pair = data.value<QPair<int, int>>();
+        int type = pair.first;
+        if (type == 11) { // 重置滤镜
+            emit SigResetFilter();
+            // 取消所有勾选状态
+            for (QAction *act : m_filter_menu->findChildren<QAction*>()) {
+                if (act->isCheckable()) {
+                    act->setChecked(false);
+                }
+            }
+            emit SigShowToast(tr("滤镜已重置"));
+        }
+    }
 }
 
 void CtrlBar::OnAudioModeMenuTriggered(QAction* action)

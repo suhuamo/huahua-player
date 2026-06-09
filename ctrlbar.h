@@ -36,6 +36,7 @@ public:
     void OnSeekBack(int targetSeconds);
     void OnVolumeChanged(double percent);  // 快捷键音量变化
     void OnAudioModeChanged(int mode);     // 音频模式切换回调（更新按钮文字）
+    void SyncFilterMenuState();           // 同步滤镜菜单状态
 private:
     bool initUi();
     void connectSignalSlots();
@@ -52,12 +53,29 @@ signals:
     void SigPlaySeek(double percent);
     void SigShowToast(const QString &text);  // 显示提示信息的信号
     void SigAudioModeChanged(int mode);      // 音频模式切换信号
+    
+    // 视频滤镜相关信号
+    void SigSetFilterBrightness(double value);
+    void SigSetFilterContrast(double value);
+    void SigSetFilterSaturation(double value);
+    void SigSetFilterBlur(double value);
+    void SigSetFilterGrayscale(bool enabled);
+    void SigSetFilterEdgeDetect(bool enabled);
+    void SigSetFilterHorizontalFlip(bool enabled);
+    void SigSetFilterVerticalFlip(bool enabled);
+    void SigSetFilterSepia(bool enabled);
+    void SigSetFilterNegative(bool enabled);
+    void SigSetFilterSharpen(bool enabled);
+    void SigResetFilter();
 private slots:
     void on_SpeedBtn_clicked();
     void OnSpeedMenuTriggered(QAction* action);
 
     void on_AudioModeBtn_clicked();
     void OnAudioModeMenuTriggered(QAction* action);
+
+    void on_FilterBtn_clicked();
+    void OnFilterMenuTriggered(QAction* action);
 
     void on_PlayOrPauseBtn_clicked();
 
@@ -70,6 +88,7 @@ private:
     int m_last_play_seconds; //上次播放时间
     QMenu *m_speed_menu;     // 倍速下拉菜单
     QMenu *m_audio_mode_menu; // 音频模式下拉菜单
+    QMenu *m_filter_menu;    // 滤镜下拉菜单
 };
 
 #endif // CTRLBAR_H
