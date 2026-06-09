@@ -133,7 +133,8 @@ VideoCtl::VideoCtl(QObject *parent):
     m_hw_device_ctx(nullptr),
     m_stem_seek_pos(0),
     m_audio_force_play(true),
-    m_video_filter(nullptr){
+    m_video_filter(nullptr),
+    m_last_emitted_seconds(-1){
 }
 
 bool VideoCtl::init() {
@@ -279,6 +280,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
     m_user_stop = false; // 重置用户停止标志
     m_audio_mode = AUDIO_ORIGINAL; // 重置音频模式
     m_stem_seek_req = false; // 重置 stem seek 标志
+    m_last_emitted_seconds = -1; // 重置播放秒数信号发射记录，确保新视频能正确发射信号
 
     char filename_c[1024] = {};
     sprintf(filename_c, "%s", filename.toStdString().c_str());
@@ -2042,8 +2044,12 @@ display:
 //    todo:步长的时候会导致 get_master_clock = NAN 会存在问题吧
     double clock = get_master_clock(is);
     if (!std::isnan(clock) && clock >= 0) {
-        double media_time = clock;
-        emit SigVideoPlaySeconds((int)media_time);
+        int current_seconds = (int)clock;
+        // 信号节流：只在秒数变化时发射信号，避免高频发射导致事件队列堆积
+        if (current_seconds != m_last_emitted_seconds) {
+            m_last_emitted_seconds = current_seconds;
+            emit SigVideoPlaySeconds(current_seconds);
+        }
     }
 }
 

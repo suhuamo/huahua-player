@@ -221,6 +221,9 @@ private:
     // 视频滤镜相关
     VideoFilter* m_video_filter;    // 视频滤镜实例
     FilterParams m_filter_params;   // 当前滤镜参数
+    
+    // 信号节流相关
+    int m_last_emitted_seconds;     // 上次发射播放秒数信号的值，用于节流
 public:
     sonicStreamStruct* m_audio_speed_convert;
 };
