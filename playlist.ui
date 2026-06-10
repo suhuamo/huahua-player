@@ -30,7 +30,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="MediaList" name="List">
+    <widget class="MediaList" name="list">
      <item>
       <property name="text">
        <string>testlist0</string>

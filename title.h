@@ -14,20 +14,20 @@ class Title : public QWidget
 public:
     explicit Title(QWidget *parent = 0);
     ~Title();
-    bool Init();
-    void SlotOnPlay(QString filePath);
-    void SlotOnStop(); // 用户主动停止时清空文件名
+    bool init();
+    void onPlay(QString filePath);
+    void onStop(); // 用户主动停止时清空文件名
 private:
     void paintEvent(QPaintEvent *event);
     void resizeEvent(QResizeEvent *event);
     bool initUi();
     void connectSignalSlots();
 signals:
-    void SigMinBtnClicked();
-    void SigMaxBtnClicked();
-    void SigFullScreenBtnClicked();
-    void SigCloseBtnClicked();
-    void SigMenuBtnClicked();
+    void sigMinBtnClicked();
+    void sigMaxBtnClicked();
+    void sigFullScreenBtnClicked();
+    void sigCloseBtnClicked();
+    void sigMenuBtnClicked();
 
 private:
     Ui::Title *ui;

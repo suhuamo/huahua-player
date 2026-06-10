@@ -25,7 +25,7 @@ void Title::resizeEvent(QResizeEvent *event)
     Q_UNUSED(event);
 }
 
-bool Title::Init()
+bool Title::init()
 {
     if(initUi() == false) {
         return false;
@@ -36,52 +36,52 @@ bool Title::Init()
     return true;
 }
 
-void Title::SlotOnPlay(QString filePath)
+void Title::onPlay(QString filePath)
 {
-    qDebug() << "Title::SlotOnPlay";
+    qDebug() << "Title::onPlay";
     QFileInfo fileInfo(filePath);
     if(fileInfo.isFile()) {
-        ui->MovieNameLab->setText(fileInfo.fileName());
+        ui->movieNameLab->setText(fileInfo.fileName());
 //        todo：加一个异常情况判断，即文件被删除了
     } else {
         //    todo:可以加个弹窗提示
-        ui->MovieNameLab->setText("文件不存在");
+        ui->movieNameLab->setText("文件不存在");
     }
 
 }
 
-void Title::SlotOnStop()
+void Title::onStop()
 {
-    ui->MovieNameLab->clear();
+    ui->movieNameLab->clear();
 }
 bool Title::initUi()
 {
     //    鼠标悬浮在按钮上显示的文本
-    ui->MenuBtn->setToolTip("显示主菜单");
-    ui->MinBtn->setToolTip("最小化");
-    ui->MaxBtn->setToolTip("最大化");
-    ui->FullScreenBtn->setToolTip("全屏");
-    ui->CloseBtn->setToolTip("关闭");
+    ui->menuBtn->setToolTip("显示主菜单");
+    ui->minBtn->setToolTip("最小化");
+    ui->maxBtn->setToolTip("最大化");
+    ui->fullScreenBtn->setToolTip("全屏");
+    ui->closeBtn->setToolTip("关闭");
 //    清空媒体视频名称
-    ui->MovieNameLab->clear();
+    ui->movieNameLab->clear();
 //     todo：目前没发现这个有什么用，等发现了再打开。保证窗口不被绘制上的部分透明
 //    setAttribute(Qt::WA_TranslucentBackground);
 //    设置样式表
-    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/title.css"));
+    setStyleSheet(GlobalHelper::getQssStr(":/res/qss/title.css"));
 //    设置按钮图标
-    GlobalHelper::SetIcon(ui->MinBtn, 9, QChar(0xf2d1));
-    GlobalHelper::SetIcon(ui->MaxBtn, 9, QChar(0xf2d0));
-    GlobalHelper::SetIcon(ui->FullScreenBtn, 9, QChar(0xf065));
-    GlobalHelper::SetIcon(ui->CloseBtn, 9, QChar(0xf00d));
+    GlobalHelper::setIcon(ui->minBtn, 9, QChar(0xf2d1));
+    GlobalHelper::setIcon(ui->maxBtn, 9, QChar(0xf2d0));
+    GlobalHelper::setIcon(ui->fullScreenBtn, 9, QChar(0xf065));
+    GlobalHelper::setIcon(ui->closeBtn, 9, QChar(0xf00d));
 
     return true;
 }
 
 void Title::connectSignalSlots()
 {
-    connect(ui->MinBtn, &QPushButton::clicked, this, &Title::SigMinBtnClicked);
-    connect(ui->MaxBtn, &QPushButton::clicked, this, &Title::SigMaxBtnClicked);
-    connect(ui->FullScreenBtn, &QPushButton::clicked, this, &Title::SigFullScreenBtnClicked);
-    connect(ui->CloseBtn, &QPushButton::clicked, this, &Title::SigCloseBtnClicked);
-    connect(ui->MenuBtn, &QPushButton::clicked, this, &Title::SigMenuBtnClicked);
+    connect(ui->minBtn, &QPushButton::clicked, this, &Title::sigMinBtnClicked);
+    connect(ui->maxBtn, &QPushButton::clicked, this, &Title::sigMaxBtnClicked);
+    connect(ui->fullScreenBtn, &QPushButton::clicked, this, &Title::sigFullScreenBtnClicked);
+    connect(ui->closeBtn, &QPushButton::clicked, this, &Title::sigCloseBtnClicked);
+    connect(ui->menuBtn, &QPushButton::clicked, this, &Title::sigMenuBtnClicked);
 }

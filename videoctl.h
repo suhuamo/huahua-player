@@ -66,63 +66,63 @@ public:
     int audio_decode_frame(VideoState *is);
     void set_clock_at(Clock *c, double pts, int serial, double time);
     double get_clock(Clock *c);
-    bool get_playback_change();
-    void set_playback_change(bool change);
-    float get_playback_rate();
+    bool getPlaybackChange();
+    void setPlaybackChange(bool change);
+    float getPlaybackRate();
     int64_t get_target_frequency();
     int get_target_channels();
-    bool is_normal_playback_rate();
-    void OnSetSpeed(float speed); // 设置指定倍速
-    void OnPause();
-    void OnStop();
-    void OnUserStop(); // 用户主动点击停止按钮
-    void OnPlayVolume(double percent);
-    void OnPlaySeek(double percent);
-    void OnSeekForward();
-    void OnSeekBack();
-    void OnAddVolume();
-    void OnSubVolume();
-    void OnStep(); // 逐帧播放
-    void OnSwitchAudioMode(int mode); // 切换音频模式（原声/人声/伴奏等）
-    bool OpenStemSource(const QString &stemPath); // 打开 stem 音频源
-    void CloseStemSource(); // 关闭 stem 音频源
+    bool isNormalPlaybackRate();
+    void onSetSpeed(float speed); // 设置指定倍速
+    void onPause();
+    void onStop();
+    void onUserStop(); // 用户主动点击停止按钮
+    void onPlayVolume(double percent);
+    void onPlaySeek(double percent);
+    void onSeekForward();
+    void onSeekBack();
+    void onAddVolume();
+    void onSubVolume();
+    void onStep(); // 逐帧播放
+    void onSwitchAudioMode(int mode); // 切换音频模式（原声/人声/伴奏等）
+    bool openStemSource(const QString &stemPath); // 打开 stem 音频源
+    void closeStemSource(); // 关闭 stem 音频源
 
     // 视频滤镜相关接口
-    void SetVideoFilterParams(const FilterParams &params); // 设置滤镜参数
-    FilterParams GetVideoFilterParams() const; // 获取当前滤镜参数
-    void ResetVideoFilter(); // 重置滤镜
-    
+    void setVideoFilterParams(const FilterParams &params); // 设置滤镜参数
+    FilterParams getVideoFilterParams() const; // 获取当前滤镜参数
+    void resetVideoFilter(); // 重置滤镜
+
     // 滤镜槽函数
-    void OnSetFilterBrightness(double value);
-    void OnSetFilterContrast(double value);
-    void OnSetFilterSaturation(double value);
-    void OnSetFilterBlur(double value);
-    void OnSetFilterGrayscale(bool enabled);
-    void OnSetFilterEdgeDetect(bool enabled);
-    void OnSetFilterHorizontalFlip(bool enabled);
-    void OnSetFilterVerticalFlip(bool enabled);
-    void OnSetFilterSepia(bool enabled);
-    void OnSetFilterNegative(bool enabled);
-    void OnSetFilterSharpen(bool enabled);
-    void OnResetFilter();
+    void onSetFilterBrightness(double value);
+    void onSetFilterContrast(double value);
+    void onSetFilterSaturation(double value);
+    void onSetFilterBlur(double value);
+    void onSetFilterGrayscale(bool enabled);
+    void onSetFilterEdgeDetect(bool enabled);
+    void onSetFilterHorizontalFlip(bool enabled);
+    void onSetFilterVerticalFlip(bool enabled);
+    void onSetFilterSepia(bool enabled);
+    void onSetFilterNegative(bool enabled);
+    void onSetFilterSharpen(bool enabled);
+    void onResetFilter();
 signals:
-    void SigStartPlay(QString strMsg);
-    void SigSpeed(float speed);
-    void SigPauseStat(bool paused);
-    void SigStopFinished(); // 自然播放结束
-    void SigUserStopFinished(); // 用户主动停止播放
-    void SigStop();
-    void SigVideoTotalSeconds(int seconds);
-    void SigVideoPlaySeconds(int seconds);
-    void SigVideoVolume(double percent);
-    void SigFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
-    void SigSeekForwardCompleted(int targetSeconds);  // 快进完成
-    void SigSeekBackCompleted(int targetSeconds);     // 快退完成
-    void SigAudioModeChanged(int mode);               // 音频模式切换完成
+    void sigStartPlay(QString strMsg);
+    void sigSpeed(float speed);
+    void sigPauseStat(bool paused);
+    void sigStopFinished(); // 自然播放结束
+    void sigUserStopFinished(); // 用户主动停止播放
+    void sigStop();
+    void sigVideoTotalSeconds(int seconds);
+    void sigVideoPlaySeconds(int seconds);
+    void sigVideoVolume(double percent);
+    void sigFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
+    void sigSeekForwardCompleted(int targetSeconds);  // 快进完成
+    void sigSeekBackCompleted(int targetSeconds);     // 快退完成
+    void sigAudioModeChanged(int mode);               // 音频模式切换完成
 private:
     explicit VideoCtl(QObject *parent=nullptr);
     bool init();
-    bool ConnectionSignalSlots();
+    bool connectSignalSlots();
     VideoState* stream_open(const char* filename);
     void init_clock(Clock *c, int *queueSerial);
     void set_clock(Clock *c, double pts, int serial);

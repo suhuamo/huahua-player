@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     QFontDatabase::addApplicationFont(":/res/fontawesome-webfont.ttf");
 
     MainWindow w;
-    if(w.Init() == false) {
+    if(w.init() == false) {
         return -1;
     }
     w.show();

@@ -39,18 +39,18 @@ public:
     QString currentSeparatingFile() const;
 
 signals:
-    void SigSeparationStarted();
+    void sigSeparationStarted();
     // modelIndex: 当前模型的索引(0~3)，percent: 该模型内的进度(0~100)
     // htdemucs_ft 是 4 个模型的 bag，会输出 4 个进度条
-    void SigSeparationProgress(int modelIndex, int percent);
-    void SigSeparationStemsReady(const QString &filePath);  // stem 文件已就绪，开始生成伴奏
-    void SigSeparationCompleted(const QString &filePath);
-    void SigSeparationFailed(const QString &error);
-    void SigSeparationCancelled();
+    void sigSeparationProgress(int modelIndex, int percent);
+    void sigSeparationStemsReady(const QString &filePath);  // stem 文件已就绪，开始生成伴奏
+    void sigSeparationCompleted(const QString &filePath);
+    void sigSeparationFailed(const QString &error);
+    void sigSeparationCancelled();
 
 private slots:
-    void OnProcessReadyReadStandardError();
-    void OnProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+    void onProcessReadyReadStandardError();
+    void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
     explicit AudioSeparator(QObject *parent = nullptr);

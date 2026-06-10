@@ -61,7 +61,7 @@ SeparationProgressDialog::SeparationProgressDialog(QWidget *parent)
     btnLayout->addStretch();
     m_cancel_btn = new QPushButton(tr("取消"), this);
     m_cancel_btn->setFixedSize(80, 28);
-    connect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::OnCancelClicked);
+    connect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::onCancelClicked);
     btnLayout->addWidget(m_cancel_btn);
     mainLayout->addLayout(btnLayout);
 }
@@ -127,7 +127,7 @@ void SeparationProgressDialog::setCompleted()
     m_progress_bar->setValue(100);
     m_progress_label->setText(tr("全部完成！"));
     m_cancel_btn->setText(tr("关闭"));
-    disconnect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::OnCancelClicked);
+    disconnect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::onCancelClicked);
     connect(m_cancel_btn, &QPushButton::clicked, this, &QDialog::close);
     QTimer::singleShot(1500, this, &QDialog::close);
 }
@@ -138,20 +138,20 @@ void SeparationProgressDialog::setFailed(const QString &error)
     m_progress_label->setText(tr("错误：%1").arg(error));
     m_progress_bar->setValue(0);
     m_cancel_btn->setText(tr("关闭"));
-    disconnect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::OnCancelClicked);
+    disconnect(m_cancel_btn, &QPushButton::clicked, this, &SeparationProgressDialog::onCancelClicked);
     connect(m_cancel_btn, &QPushButton::clicked, this, &QDialog::close);
 }
 
-void SeparationProgressDialog::OnCancelClicked()
+void SeparationProgressDialog::onCancelClicked()
 {
-    emit SigCancelRequested();
+    emit sigCancelRequested();
     close();
 }
 
 void SeparationProgressDialog::closeEvent(QCloseEvent *event)
 {
     if (!m_completed) {
-        emit SigCancelRequested();
+        emit sigCancelRequested();
     }
     event->accept();
 }

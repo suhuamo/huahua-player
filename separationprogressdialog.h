@@ -27,13 +27,13 @@ public:
     void setFailed(const QString &error);
 
 signals:
-    void SigCancelRequested();
+    void sigCancelRequested();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
-    void OnCancelClicked();
+    void onCancelClicked();
 
 private:
     enum StemStatus { STEM_WAITING, STEM_PROCESSING, STEM_DONE };

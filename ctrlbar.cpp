@@ -7,7 +7,7 @@
 CtrlBar::CtrlBar(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::CtrlBar),
-    _last_volume_percent(0.5),
+    m_last_volume_percent(0.5),
     m_total_play_seconds(0),
     m_last_play_seconds(-1)
 {
@@ -19,7 +19,7 @@ CtrlBar::~CtrlBar()
     delete ui;
 }
 
-bool CtrlBar::Init()
+bool CtrlBar::init()
 {
     if(initUi() == false) {
         return false;
@@ -30,21 +30,21 @@ bool CtrlBar::Init()
 //    设置初始音量
     double percent = -1.0;
 //    从本地配置文件中读取
-    GlobalHelper::GetPlayVolume(percent);
+    GlobalHelper::getPlayVolume(percent);
     if(percent != -1.0) {
-        OnVideopVolume(percent);
-        emit SigPlayVolume(percent);
+        onVideoVolume(percent);
+        emit sigPlayVolume(percent);
     } else {
-        OnVideopVolume(_last_volume_percent);
-        emit SigPlayVolume(_last_volume_percent);
+        onVideoVolume(m_last_volume_percent);
+        emit sigPlayVolume(m_last_volume_percent);
     }
 
     return true;
 }
 
-void CtrlBar::OnSpeed(float speed)
+void CtrlBar::onSpeed(float speed)
 {
-    ui->SpeedBtn->setText(QString("倍数:%1").arg(speed));
+    ui->speedBtn->setText(QString("倍数:%1").arg(speed));
 
     // 同步菜单选中状态
     for (QAction *action : m_speed_menu->actions()) {
@@ -55,26 +55,26 @@ void CtrlBar::OnSpeed(float speed)
 bool CtrlBar::initUi()
 {
     //加载qss
-    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/ctrlbar.css"));
+    setStyleSheet(GlobalHelper::getQssStr(":/res/qss/ctrlbar.css"));
 //    设置按钮图片
-    GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
-    GlobalHelper::SetIcon(ui->OverPlayBtn, 12, QChar(0xf04d));
-    GlobalHelper::SetIcon(ui->BackBtn, 12, QChar(0xf048));
-    GlobalHelper::SetIcon(ui->NextBtn, 12, QChar(0xf051));
-    GlobalHelper::SetIcon(ui->PlayListCtlBtn, 12, QChar(0xf036));
-    GlobalHelper::SetIcon(ui->SettingBtn, 12, QChar(0xf013));
-    GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
+    GlobalHelper::setIcon(ui->playOrPauseBtn, 12, QChar(0xf04b));
+    GlobalHelper::setIcon(ui->overPlayBtn, 12, QChar(0xf04d));
+    GlobalHelper::setIcon(ui->backBtn, 12, QChar(0xf048));
+    GlobalHelper::setIcon(ui->nextBtn, 12, QChar(0xf051));
+    GlobalHelper::setIcon(ui->playListCtlBtn, 12, QChar(0xf036));
+    GlobalHelper::setIcon(ui->settingBtn, 12, QChar(0xf013));
+    GlobalHelper::setIcon(ui->volumeBtn, 12, QChar(0xf028));
 //    设置鼠标悬浮提示
-    ui->PlayOrPauseBtn->setToolTip("点击播放");
-    ui->OverPlayBtn->setToolTip("结束播放");
-    ui->BackBtn->setToolTip("上一个");
-    ui->NextBtn->setToolTip("下一个");
-    ui->PlayListCtlBtn->setToolTip("播放列表");
-    ui->SettingBtn->setToolTip("设置");
-    ui->VolumeBtn->setToolTip("点击静音");
-    ui->SpeedBtn->setToolTip("倍速");
-    ui->AudioModeBtn->setToolTip("音频模式");
-    ui->FilterBtn->setToolTip("滤镜");
+    ui->playOrPauseBtn->setToolTip("点击播放");
+    ui->overPlayBtn->setToolTip("结束播放");
+    ui->backBtn->setToolTip("上一个");
+    ui->nextBtn->setToolTip("下一个");
+    ui->playListCtlBtn->setToolTip("播放列表");
+    ui->settingBtn->setToolTip("设置");
+    ui->volumeBtn->setToolTip("点击静音");
+    ui->speedBtn->setToolTip("倍速");
+    ui->audioModeBtn->setToolTip("音频模式");
+    ui->filterBtn->setToolTip("滤镜");
 
     // 创建倍速下拉菜单，步长由 SPEED_MENU_SCALE 控制
     m_speed_menu = new QMenu(this);
@@ -92,7 +92,7 @@ bool CtrlBar::initUi()
             action->setChecked(true);
         }
     }
-    connect(m_speed_menu, &QMenu::triggered, this, &CtrlBar::OnSpeedMenuTriggered);
+    connect(m_speed_menu, &QMenu::triggered, this, &CtrlBar::onSpeedMenuTriggered);
 
     // 创建音频模式下拉菜单
     m_audio_mode_menu = new QMenu(this);
@@ -122,7 +122,7 @@ bool CtrlBar::initUi()
             action->setChecked(true);
         }
     }
-    connect(m_audio_mode_menu, &QMenu::triggered, this, &CtrlBar::OnAudioModeMenuTriggered);
+    connect(m_audio_mode_menu, &QMenu::triggered, this, &CtrlBar::onAudioModeMenuTriggered);
 
     // 创建滤镜下拉菜单
     m_filter_menu = new QMenu(this);
@@ -178,7 +178,7 @@ bool CtrlBar::initUi()
     QAction *act_reset_filter = m_filter_menu->addAction(tr("重置滤镜"));
     act_reset_filter->setData(QVariant::fromValue(QPair<int, int>(11, 0)));
 
-    connect(m_filter_menu, &QMenu::triggered, this, &CtrlBar::OnFilterMenuTriggered);
+    connect(m_filter_menu, &QMenu::triggered, this, &CtrlBar::onFilterMenuTriggered);
 
     return true;
 }
@@ -186,86 +186,86 @@ bool CtrlBar::initUi()
 void CtrlBar::connectSignalSlots()
 {
 //    todo：SettingBtn 是显示出来调节视频的参数，比如编码格式，编码效率等，等后续再开发
-    connect(ui->PlayListCtlBtn, &QPushButton::clicked, this, &CtrlBar::SigPlayListCtlBtnClicked);
-    connect(ui->VolumeBtn, &QPushButton::clicked, this, &CtrlBar::SlotOnVolumeBtnClicked);
-    connect(ui->BackBtn, &QPushButton::clicked, this, &CtrlBar::SigBackBtnClicked);
-    connect(ui->NextBtn, &QPushButton::clicked, this, &CtrlBar::SigNextBtnClicked);
-    connect(ui->VolumeSlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnVolumeSliderValueChanged);
-    connect(ui->PlaySlider, &CustomSlider::SigSliderValueChanged, this, &CtrlBar::OnPlaySliderValueChanged);
+    connect(ui->playListCtlBtn, &QPushButton::clicked, this, &CtrlBar::sigPlayListCtlBtnClicked);
+    connect(ui->volumeBtn, &QPushButton::clicked, this, &CtrlBar::onVolumeBtnClicked);
+    connect(ui->backBtn, &QPushButton::clicked, this, &CtrlBar::sigBackBtnClicked);
+    connect(ui->nextBtn, &QPushButton::clicked, this, &CtrlBar::sigNextBtnClicked);
+    connect(ui->volumeSlider, &CustomSlider::sigSliderValueChanged, this, &CtrlBar::onVolumeSliderValueChanged);
+    connect(ui->playSlider, &CustomSlider::sigSliderValueChanged, this, &CtrlBar::onPlaySliderValueChanged);
     
     // 按钮点击信号显式连接
-    connect(ui->SpeedBtn, &QPushButton::clicked, this, &CtrlBar::OnSpeedBtnClicked);
-    connect(ui->AudioModeBtn, &QPushButton::clicked, this, &CtrlBar::OnAudioModeBtnClicked);
-    connect(ui->FilterBtn, &QPushButton::clicked, this, &CtrlBar::OnFilterBtnClicked);
-    connect(ui->PlayOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::OnPlayOrPauseBtnClicked);
-    connect(ui->OverPlayBtn, &QPushButton::clicked, this, &CtrlBar::OnOverPlayBtnClicked);
+    connect(ui->speedBtn, &QPushButton::clicked, this, &CtrlBar::onSpeedBtnClicked);
+    connect(ui->audioModeBtn, &QPushButton::clicked, this, &CtrlBar::onAudioModeBtnClicked);
+    connect(ui->filterBtn, &QPushButton::clicked, this, &CtrlBar::onFilterBtnClicked);
+    connect(ui->playOrPauseBtn, &QPushButton::clicked, this, &CtrlBar::onPlayOrPauseBtnClicked);
+    connect(ui->overPlayBtn, &QPushButton::clicked, this, &CtrlBar::onOverPlayBtnClicked);
 }
 
-void CtrlBar::OnPauseStat(bool paused)
+void CtrlBar::onPauseStat(bool paused)
 {
-    qDebug() << "CtrlBar::OnPauseStat" << paused;
+    qDebug() << "CtrlBar::onPauseStat" << paused;
 //    需要变成暂停状态
     if (paused)
     {
-        GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
-        ui->PlayOrPauseBtn->setToolTip("点击播放");
+        GlobalHelper::setIcon(ui->playOrPauseBtn, 12, QChar(0xf04b));
+        ui->playOrPauseBtn->setToolTip("点击播放");
     }
     else
     {
 //        此时状态为播放状态，按钮变为暂停按钮，提示为点击暂停
-        GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04c));
-        ui->PlayOrPauseBtn->setToolTip("点击暂停");
+        GlobalHelper::setIcon(ui->playOrPauseBtn, 12, QChar(0xf04c));
+        ui->playOrPauseBtn->setToolTip("点击暂停");
     }
 }
 
-void CtrlBar::OnStopFinished()
+void CtrlBar::onStopFinished()
 {
-    ui->PlaySlider->setValue(0);
+    ui->playSlider->setValue(0);
     QTime stopTime(0, 0, 0);
-    ui->VideoPlayTimeTimeEdit->setTime(stopTime);
-    GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
-    ui->PlayOrPauseBtn->setToolTip("点击播放");
+    ui->videoPlayTimeEdit->setTime(stopTime);
+    GlobalHelper::setIcon(ui->playOrPauseBtn, 12, QChar(0xf04b));
+    ui->playOrPauseBtn->setToolTip("点击播放");
 
     m_last_play_seconds = -1;
 }
 
-void CtrlBar::OnUserStopFinished()
+void CtrlBar::onUserStopFinished()
 {
-    ui->PlaySlider->setValue(0);
+    ui->playSlider->setValue(0);
     QTime stopTime(0, 0, 0);
-    ui->VideoTotalTimeTimeEdit->setTime(stopTime);
-    ui->VideoPlayTimeTimeEdit->setTime(stopTime);
-    GlobalHelper::SetIcon(ui->PlayOrPauseBtn, 12, QChar(0xf04b));
-    ui->PlayOrPauseBtn->setToolTip("点击播放");
+    ui->videoTotalTimeEdit->setTime(stopTime);
+    ui->videoPlayTimeEdit->setTime(stopTime);
+    GlobalHelper::setIcon(ui->playOrPauseBtn, 12, QChar(0xf04b));
+    ui->playOrPauseBtn->setToolTip("点击播放");
 
     m_last_play_seconds = -1;
     m_total_play_seconds = 0;
 }
 
-void CtrlBar::OnVideopVolume(double percent)
+void CtrlBar::onVideoVolume(double percent)
 {
-    ui->VolumeSlider->setValue(percent * MAX_SLIDER_VALUE);
-    _last_volume_percent = percent;
+    ui->volumeSlider->setValue(percent * MAX_SLIDER_VALUE);
+    m_last_volume_percent = percent;
 
-    if (_last_volume_percent == 0)
+    if (m_last_volume_percent == 0)
     {
-        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
-        ui->VolumeBtn->setToolTip("点击恢复音量");
+        GlobalHelper::setIcon(ui->volumeBtn, 12, QChar(0xf026));
+        ui->volumeBtn->setToolTip("点击恢复音量");
     }
     else
     {
-        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
-        ui->VolumeBtn->setToolTip("点击静音");
+        GlobalHelper::setIcon(ui->volumeBtn, 12, QChar(0xf028));
+        ui->volumeBtn->setToolTip("点击静音");
     }
-    GlobalHelper::SavePlayVolume(percent);
+    GlobalHelper::savePlayVolume(percent);
 
     // 显示音量提示
     int volumePercent = static_cast<int>(percent * 100);
-    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
+    emit sigShowToast(QString("声音：%1%").arg(volumePercent));
 
 }
 
-void CtrlBar::OnVideoTotalSeconds(int seconds)
+void CtrlBar::onVideoTotalSeconds(int seconds)
 {
     m_total_play_seconds = seconds;
 
@@ -274,10 +274,10 @@ void CtrlBar::OnVideoTotalSeconds(int seconds)
     tmm = (seconds % 3600) / 60;
     tss = seconds % 60;
     QTime totalTime(thh, tmm, tss);
-    ui->VideoTotalTimeTimeEdit->setTime(totalTime);
+    ui->videoTotalTimeEdit->setTime(totalTime);
 }
 
-void CtrlBar::OnVideoPlaySeconds(int seconds)
+void CtrlBar::onVideoPlaySeconds(int seconds)
 {
     // 优化，如果当前 seconds 和上一次 seconds 一样，那么就不用更新ui了
     if(m_last_play_seconds == seconds) {
@@ -290,17 +290,17 @@ void CtrlBar::OnVideoPlaySeconds(int seconds)
     tmm = (seconds % 3600) / 60;
     tss = seconds % 60;
     QTime totalTime(thh, tmm, tss);
-    ui->VideoPlayTimeTimeEdit->setTime(totalTime);
+    ui->videoPlayTimeEdit->setTime(totalTime);
 
     if(seconds >= 0) {
-        ui->PlaySlider->setValue(seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE);
+        ui->playSlider->setValue(seconds * 1.0 / m_total_play_seconds * MAX_SLIDER_VALUE);
     }
 }
 
-void CtrlBar::OnPlaySliderValueChanged()
+void CtrlBar::onPlaySliderValueChanged()
 {
-    double percent = ui->PlaySlider->value() * 1.0 / ui->PlaySlider->maximum();
-    emit SigPlaySeek(percent);
+    double percent = ui->playSlider->value() * 1.0 / ui->playSlider->maximum();
+    emit sigPlaySeek(percent);
     
     // 计算跳转的时间
     int seconds = static_cast<int>(percent * m_total_play_seconds);
@@ -312,126 +312,126 @@ void CtrlBar::OnPlaySliderValueChanged()
         .arg(tmm, 2, 10, QChar('0'))
         .arg(tss, 2, 10, QChar('0'));
     
-    emit SigShowToast(QString("跳转到 %1").arg(timeStr));
+    emit sigShowToast(QString("跳转到 %1").arg(timeStr));
 }
 
-void CtrlBar::SlotOnVolumeBtnClicked()
+void CtrlBar::onVolumeBtnClicked()
 {
-    // 静音和恢复静音并不会改变 _last_volume_percent 的值，因为 _last_volume_percent 只会被滑动条滑动改变
+    // 静音和恢复静音并不会改变 m_last_volume_percent 的值，因为 m_last_volume_percent 只会被滑动条滑动改变
 //    如果此时是非静音状态
-    if(ui->VolumeBtn->text() == QChar(0xf028)) {
-        ui->VolumeSlider->setValue(0);
-        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf026));
-        ui->VolumeBtn->setToolTip("点击恢复音量");
-        emit SigPlayVolume(0);
-        emit SigShowToast("声音: 0%");
+    if(ui->volumeBtn->text() == QChar(0xf028)) {
+        ui->volumeSlider->setValue(0);
+        GlobalHelper::setIcon(ui->volumeBtn, 12, QChar(0xf026));
+        ui->volumeBtn->setToolTip("点击恢复音量");
+        emit sigPlayVolume(0);
+        emit sigShowToast("声音: 0%");
     } else {
 //        恢复之前的音量百分比
-        ui->VolumeSlider->setValue(_last_volume_percent * MAX_SLIDER_VALUE);
-        GlobalHelper::SetIcon(ui->VolumeBtn, 12, QChar(0xf028));
-        ui->VolumeBtn->setToolTip("点击静音");
-        emit SigPlayVolume(_last_volume_percent);
+        ui->volumeSlider->setValue(m_last_volume_percent * MAX_SLIDER_VALUE);
+        GlobalHelper::setIcon(ui->volumeBtn, 12, QChar(0xf028));
+        ui->volumeBtn->setToolTip("点击静音");
+        emit sigPlayVolume(m_last_volume_percent);
         
-        int volumePercent = static_cast<int>(_last_volume_percent * 100);
-        emit SigShowToast(QString("声音: %1%").arg(volumePercent));
+        int volumePercent = static_cast<int>(m_last_volume_percent * 100);
+        emit sigShowToast(QString("声音: %1%").arg(volumePercent));
     }
 }
 
-void CtrlBar::OnVolumeSliderValueChanged()
+void CtrlBar::onVolumeSliderValueChanged()
 {
-    double percent = ui->VolumeSlider->value() * 1.0 / ui->VolumeSlider->maximum();
-    emit SigPlayVolume(percent);
+    double percent = ui->volumeSlider->value() * 1.0 / ui->volumeSlider->maximum();
+    emit sigPlayVolume(percent);
 
-    OnVideopVolume(percent);
+    onVideoVolume(percent);
     
     // 显示音量提示
     int volumePercent = static_cast<int>(percent * 100);
-    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
+    emit sigShowToast(QString("声音：%1%").arg(volumePercent));
 }
 
-void CtrlBar::OnSpeedBtnClicked()
+void CtrlBar::onSpeedBtnClicked()
 {
     // 弹出倍速下拉菜单，显示在按钮上方
-    QPoint pos = ui->SpeedBtn->mapToGlobal(QPoint(0, 0));
+    QPoint pos = ui->speedBtn->mapToGlobal(QPoint(0, 0));
     pos.setY(pos.y() - m_speed_menu->sizeHint().height());
     m_speed_menu->exec(pos);
 }
 
-void CtrlBar::OnSpeedMenuTriggered(QAction* action)
+void CtrlBar::onSpeedMenuTriggered(QAction* action)
 {
     float speed = action->data().toFloat();
-    emit SigSpeedChanged(speed);
-    emit SigShowToast(QString("倍速：%1x").arg(speed, 0, 'f', speed == int(speed) ? 1 : 2));
+    emit sigSpeedChanged(speed);
+    emit sigShowToast(QString("倍速：%1x").arg(speed, 0, 'f', speed == int(speed) ? 1 : 2));
 }
 
-void CtrlBar::OnPlayOrPauseBtnClicked()
+void CtrlBar::onPlayOrPauseBtnClicked()
 {
-    emit SigPlayOrPause();
+    emit sigPlayOrPause();
 }
 
-void CtrlBar::OnOverPlayBtnClicked()
+void CtrlBar::onOverPlayBtnClicked()
 {
-    emit SigStop();
+    emit sigStop();
 }
 
 // 快捷键：快进
-void CtrlBar::OnSeekForward(int targetSeconds)
+void CtrlBar::onSeekForward(int targetSeconds)
 {
     int hours = targetSeconds / 3600;
     int minutes = (targetSeconds % 3600) / 60;
     int seconds = targetSeconds % 60;
-    emit SigShowToast(QString("快进: %1:%2:%3")
+    emit sigShowToast(QString("快进: %1:%2:%3")
         .arg(hours, 2, 10, QChar('0'))
         .arg(minutes, 2, 10, QChar('0'))
         .arg(seconds, 2, 10, QChar('0')));
 }
 
 // 快捷键：快退
-void CtrlBar::OnSeekBack(int targetSeconds)
+void CtrlBar::onSeekBack(int targetSeconds)
 {
     int hours = targetSeconds / 3600;
     int minutes = (targetSeconds % 3600) / 60;
     int seconds = targetSeconds % 60;
-    emit SigShowToast(QString("快退: %1:%2:%3")
+    emit sigShowToast(QString("快退: %1:%2:%3")
         .arg(hours, 2, 10, QChar('0'))
         .arg(minutes, 2, 10, QChar('0'))
         .arg(seconds, 2, 10, QChar('0')));
 }
 
 // 快捷键：音量变化
-void CtrlBar::OnVolumeChanged(double percent)
+void CtrlBar::onVolumeChanged(double percent)
 {
     // 更新 UI
-    OnVideopVolume(percent);
+    onVideoVolume(percent);
     
     // 显示音量提示
     int volumePercent = static_cast<int>(percent * 100);
-    emit SigShowToast(QString("声音：%1%").arg(volumePercent));
+    emit sigShowToast(QString("声音：%1%").arg(volumePercent));
 }
 
-void CtrlBar::OnAudioModeBtnClicked()
+void CtrlBar::onAudioModeBtnClicked()
 {
     // 弹出音频模式下拉菜单，显示在按钮上方
-    QPoint pos = ui->AudioModeBtn->mapToGlobal(QPoint(0, 0));
+    QPoint pos = ui->audioModeBtn->mapToGlobal(QPoint(0, 0));
     pos.setY(pos.y() - m_audio_mode_menu->sizeHint().height());
     m_audio_mode_menu->exec(pos);
 }
 
-void CtrlBar::OnFilterBtnClicked()
+void CtrlBar::onFilterBtnClicked()
 {
     // 同步滤镜菜单状态
-    SyncFilterMenuState();
+    syncFilterMenuState();
     
     // 弹出滤镜下拉菜单，显示在按钮上方
-    QPoint pos = ui->FilterBtn->mapToGlobal(QPoint(0, 0));
+    QPoint pos = ui->filterBtn->mapToGlobal(QPoint(0, 0));
     pos.setY(pos.y() - m_filter_menu->sizeHint().height());
     m_filter_menu->exec(pos);
 }
 
-void CtrlBar::SyncFilterMenuState()
+void CtrlBar::syncFilterMenuState()
 {
     // 获取当前滤镜参数
-    FilterParams params = VideoCtl::GetInstance()->GetVideoFilterParams();
+    FilterParams params = VideoCtl::GetInstance()->getVideoFilterParams();
     
     // 更新所有可勾选的菜单选项状态
     for (QAction *action : m_filter_menu->findChildren<QAction*>()) {
@@ -477,7 +477,7 @@ void CtrlBar::SyncFilterMenuState()
     }
 }
 
-void CtrlBar::OnFilterMenuTriggered(QAction* action)
+void CtrlBar::onFilterMenuTriggered(QAction* action)
 {
     QVariant data = action->data();
     if (data.canConvert<QPair<int, double>>()) {
@@ -487,17 +487,17 @@ void CtrlBar::OnFilterMenuTriggered(QAction* action)
         // 先发送参数更新信号
         switch (type) {
         case 0: // 亮度
-            emit SigSetFilterBrightness(value);
+            emit sigSetFilterBrightness(value);
             break;
         case 1: // 对比度
-            emit SigSetFilterContrast(value);
+            emit sigSetFilterContrast(value);
             break;
         case 2: // 饱和度
-            emit SigSetFilterSaturation(value);
+            emit sigSetFilterSaturation(value);
             break;
         }
         // 获取更新后的参数并显示
-        FilterParams params = VideoCtl::GetInstance()->GetVideoFilterParams();
+        FilterParams params = VideoCtl::GetInstance()->getVideoFilterParams();
         QString toastText;
         switch (type) {
         case 0: // 亮度
@@ -510,68 +510,68 @@ void CtrlBar::OnFilterMenuTriggered(QAction* action)
             toastText = QString(tr("饱和度: %1")).arg(QString::number(params.saturation, 'f', 2));
             break;
         }
-        emit SigShowToast(toastText);
+        emit sigShowToast(toastText);
     } else if (data.canConvert<QPair<int, bool>>()) {
         QPair<int, bool> pair = data.value<QPair<int, bool>>();
         int type = pair.first;
         bool enabled = action->isChecked(); // Qt会自动切换状态，直接获取即可
         switch (type) {
         case 3: // 灰度
-            emit SigSetFilterGrayscale(enabled);
-            emit SigShowToast(enabled ? tr("已启用灰度") : tr("已禁用灰度"));
+            emit sigSetFilterGrayscale(enabled);
+            emit sigShowToast(enabled ? tr("已启用灰度") : tr("已禁用灰度"));
             break;
         case 4: // 复古褐色
-            emit SigSetFilterSepia(enabled);
-            emit SigShowToast(enabled ? tr("已启用复古褐色") : tr("已禁用复古褐色"));
+            emit sigSetFilterSepia(enabled);
+            emit sigShowToast(enabled ? tr("已启用复古褐色") : tr("已禁用复古褐色"));
             break;
         case 5: // 负片效果
-            emit SigSetFilterNegative(enabled);
-            emit SigShowToast(enabled ? tr("已启用负片效果") : tr("已禁用负片效果"));
+            emit sigSetFilterNegative(enabled);
+            emit sigShowToast(enabled ? tr("已启用负片效果") : tr("已禁用负片效果"));
             break;
         case 6: // 锐化
-            emit SigSetFilterSharpen(enabled);
-            emit SigShowToast(enabled ? tr("已启用锐化") : tr("已禁用锐化"));
+            emit sigSetFilterSharpen(enabled);
+            emit sigShowToast(enabled ? tr("已启用锐化") : tr("已禁用锐化"));
             break;
         case 7: // 模糊
-            emit SigSetFilterBlur(enabled ? 2.0 : 0.0);
-            emit SigShowToast(enabled ? tr("已启用模糊") : tr("已禁用模糊"));
+            emit sigSetFilterBlur(enabled ? 2.0 : 0.0);
+            emit sigShowToast(enabled ? tr("已启用模糊") : tr("已禁用模糊"));
             break;
         case 8: // 边缘检测
-            emit SigSetFilterEdgeDetect(enabled);
-            emit SigShowToast(enabled ? tr("已启用边缘检测") : tr("已禁用边缘检测"));
+            emit sigSetFilterEdgeDetect(enabled);
+            emit sigShowToast(enabled ? tr("已启用边缘检测") : tr("已禁用边缘检测"));
             break;
         case 9: // 水平翻转
-            emit SigSetFilterHorizontalFlip(enabled);
-            emit SigShowToast(enabled ? tr("已启用水平翻转") : tr("已禁用水平翻转"));
+            emit sigSetFilterHorizontalFlip(enabled);
+            emit sigShowToast(enabled ? tr("已启用水平翻转") : tr("已禁用水平翻转"));
             break;
         case 10: // 垂直翻转
-            emit SigSetFilterVerticalFlip(enabled);
-            emit SigShowToast(enabled ? tr("已启用垂直翻转") : tr("已禁用垂直翻转"));
+            emit sigSetFilterVerticalFlip(enabled);
+            emit sigShowToast(enabled ? tr("已启用垂直翻转") : tr("已禁用垂直翻转"));
             break;
         }
     } else if (data.canConvert<QPair<int, int>>()) {
         QPair<int, int> pair = data.value<QPair<int, int>>();
         int type = pair.first;
         if (type == 11) { // 重置滤镜
-            emit SigResetFilter();
+            emit sigResetFilter();
             // 取消所有勾选状态
             for (QAction *act : m_filter_menu->findChildren<QAction*>()) {
                 if (act->isCheckable()) {
                     act->setChecked(false);
                 }
             }
-            emit SigShowToast(tr("滤镜已重置"));
+            emit sigShowToast(tr("滤镜已重置"));
         }
     }
 }
 
-void CtrlBar::OnAudioModeMenuTriggered(QAction* action)
+void CtrlBar::onAudioModeMenuTriggered(QAction* action)
 {
     int mode = action->data().toInt();
-    emit SigAudioModeChanged(mode);
+    emit sigAudioModeChanged(mode);
 }
 
-void CtrlBar::OnAudioModeChanged(int mode)
+void CtrlBar::onAudioModeChanged(int mode)
 {
     // 更新按钮文字
     QString text;
@@ -584,7 +584,7 @@ void CtrlBar::OnAudioModeChanged(int mode)
     case AUDIO_OTHER:         text = tr("其他"); break;
     default:                  text = tr("原声"); break;
     }
-    ui->AudioModeBtn->setText(text);
+    ui->audioModeBtn->setText(text);
 
     // 同步菜单选中状态
     for (QAction *action : m_audio_mode_menu->actions()) {

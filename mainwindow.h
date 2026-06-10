@@ -25,7 +25,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    bool Init();
+    bool init();
 protected:
 //    解决窗口无法拖动
     void mousePressEvent(QMouseEvent *event);
@@ -34,23 +34,23 @@ protected:
 //    键盘事件已通过全局QAction处理
 private:
     void connectSignalSlots();
-    void SlotOnMinBtnClicked();
-    void SlotOnMaxBtnClicked();
-    void SlotOnFullScreenBtnClicked();
-    void SlotOnCloseBtnClicked();
-    void SlotOnMenuBtnClicked();
-    void SlotOnPlayListCtrlBtnClicked();
-    void SlotOnAudioModeChanged(int mode);
-    void SlotOnSeparationCompleted(const QString &filePath);
+    void onMinBtnClicked();
+    void onMaxBtnClicked();
+    void onFullScreenBtnClicked();
+    void onCloseBtnClicked();
+    void onMenuBtnClicked();
+    void onPlayListCtrlBtnClicked();
+    void onAudioModeChanged(int mode);
+    void onSeparationCompleted(const QString &filePath);
 //    初始化菜单，并添加 action 的槽函数
     void initMenu();
 signals:
-    void SigSeekForward();
-    void SigSeekBack();
-    void SigAddVolume();
-    void SigSubVolume();
-    void SigPlayOrPause();
-    void SigStep(); // 逐帧播放
+    void sigSeekForward();
+    void sigSeekBack();
+    void sigAddVolume();
+    void sigSubVolume();
+    void sigPlayOrPause();
+    void sigStep(); // 逐帧播放
 public:
     Ui::MainWindow *ui;
     Playlist m_playlist;

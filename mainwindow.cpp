@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
 //    设置任务栏中显示的图片
     this->setWindowIcon(QIcon(":/res/player.png"));
 //    加载样式
-    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/mainwid.css"));
+    setStyleSheet(GlobalHelper::getQssStr(":/res/qss/mainwid.css"));
 //    开启鼠标跟踪，用于播放时隐藏
     this->setMouseTracking(true);
 
@@ -52,22 +52,22 @@ mark：这Init为什么要让外面调用呢，在构造函数里面自己调用
 那么我们选择打开 excel，如果 excel.init 成功了，那么我就选择使用 excel了。
 就不会说 wps 明明无法使用，我们却还拿着 wps 使用，这样肯定会导致有问题的。
 */
-bool MainWindow::Init()
+bool MainWindow::init()
 {
     QWidget *play_list_bar_wid = new QWidget(this);
-    ui->PlaylistWid->setTitleBarWidget(play_list_bar_wid);
-    ui->PlaylistWid->setWidget(&m_playlist);
+    ui->playlistWid->setTitleBarWidget(play_list_bar_wid);
+    ui->playlistWid->setWidget(&m_playlist);
 
     QWidget *title_bar_wid = new QWidget(this);
-    ui->TitleWid->setTitleBarWidget(title_bar_wid);
-    ui->TitleWid->setWidget(&m_title);
+    ui->titleWid->setTitleBarWidget(title_bar_wid);
+    ui->titleWid->setWidget(&m_title);
 
 //    mark: 通过设置 title.ui 的 maxHeight 可以让 Title 这个 DockWidget 不能被拖动
 
-    if(m_title.Init() == false ||
-       m_playlist.Init() == false ||
-            ui->CtrlBarWid->Init() == false ||
-            ui->ShowWid->Init() == false) {
+    if(m_title.init() == false ||
+       m_playlist.init() == false ||
+            ui->ctrlBarWid->init() == false ||
+            ui->showWid->init() == false) {
         return false;
     }
 
@@ -82,7 +82,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 {
     if(event->button() & Qt::LeftButton) {
 //        只有鼠标在标题栏按下时，才可以拖动窗口
-        if(ui->TitleWid->geometry().contains(event->pos())) {
+        if(ui->titleWid->geometry().contains(event->pos())) {
             m_move_drag = true;
             m_drag_position = event->globalPos() - this->pos();
         }
@@ -111,62 +111,62 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
 void MainWindow::connectSignalSlots()
 {
 //    标题栏的按钮功能
-    connect(&m_title, &Title::SigMinBtnClicked, this, &MainWindow::SlotOnMinBtnClicked);
-    connect(&m_title, &Title::SigMaxBtnClicked, this, &MainWindow::SlotOnMaxBtnClicked);
-    connect(&m_title, &Title::SigFullScreenBtnClicked, this, &MainWindow::SlotOnFullScreenBtnClicked);
-    connect(&m_title, &Title::SigCloseBtnClicked, this, &MainWindow::SlotOnCloseBtnClicked);
-    connect(&m_title, &Title::SigMenuBtnClicked, this, &MainWindow::SlotOnMenuBtnClicked);
+    connect(&m_title, &Title::sigMinBtnClicked, this, &MainWindow::onMinBtnClicked);
+    connect(&m_title, &Title::sigMaxBtnClicked, this, &MainWindow::onMaxBtnClicked);
+    connect(&m_title, &Title::sigFullScreenBtnClicked, this, &MainWindow::onFullScreenBtnClicked);
+    connect(&m_title, &Title::sigCloseBtnClicked, this, &MainWindow::onCloseBtnClicked);
+    connect(&m_title, &Title::sigMenuBtnClicked, this, &MainWindow::onMenuBtnClicked);
 
     /*
      * 开启视频播放
-     * 逻辑是：双击播放列表或者点击播放按钮的时候，调用 Playlist::SigPlay，然后触发 Show::SigPlay，去调用 VideoCtl::start_play 播放视频
-     * 然后 VideoCtl::start_play 触发时 又会去调用 &Title::SlotOnPlay 修改标签栏的视频文件名称
+     * 逻辑是：双击播放列表或者点击播放按钮的时候，调用 Playlist::sigPlay，然后触发 Show::sigPlay，去调用 VideoCtl::start_play 播放视频
+     * 然后 VideoCtl::start_play 触发时 又会去调用 &Title::onPlay 修改标签栏的视频文件名称
      *
      */
-    connect(&m_playlist, &Playlist::SigPlay, ui->ShowWid, &Show::SigPlay);
+    connect(&m_playlist, &Playlist::sigPlay, ui->showWid, &Show::sigPlay);
 
 //    图片显示窗口的事件功能，比如拖拽、快捷键按下等
-    connect(ui->ShowWid, &Show::SigOpenFile, &m_playlist, &Playlist::OnAddFileAndPlay);
+    connect(ui->showWid, &Show::sigOpenFile, &m_playlist, &Playlist::onAddFileAndPlay);
     
     // Show窗口: ESC退出全屏（其他快捷键已通过MainWindow全局QAction处理，ApplicationShortcut全屏时也生效）
-    connect(ui->ShowWid, &Show::SigExitFullScreen, this, &MainWindow::SlotOnFullScreenBtnClicked);
+    connect(ui->showWid, &Show::sigExitFullScreen, this, &MainWindow::onFullScreenBtnClicked);
 
     // MainWindow全局QAction快捷键功能（ApplicationShortcut，全屏时也生效）
-    connect(this, &MainWindow::SigSeekForward, VideoCtl::GetInstance(), &VideoCtl::OnSeekForward);
-    connect(this, &MainWindow::SigSeekBack, VideoCtl::GetInstance(), &VideoCtl::OnSeekBack);
-    connect(this, &MainWindow::SigAddVolume, VideoCtl::GetInstance(), &VideoCtl::OnAddVolume);
-    connect(this, &MainWindow::SigSubVolume, VideoCtl::GetInstance(), &VideoCtl::OnSubVolume);
-    connect(this, &MainWindow::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
-    connect(this, &MainWindow::SigStep, VideoCtl::GetInstance(), &VideoCtl::OnStep);
+    connect(this, &MainWindow::sigSeekForward, VideoCtl::GetInstance(), &VideoCtl::onSeekForward);
+    connect(this, &MainWindow::sigSeekBack, VideoCtl::GetInstance(), &VideoCtl::onSeekBack);
+    connect(this, &MainWindow::sigAddVolume, VideoCtl::GetInstance(), &VideoCtl::onAddVolume);
+    connect(this, &MainWindow::sigSubVolume, VideoCtl::GetInstance(), &VideoCtl::onSubVolume);
+    connect(this, &MainWindow::sigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::onPause);
+    connect(this, &MainWindow::sigStep, VideoCtl::GetInstance(), &VideoCtl::onStep);
     
     // 滤镜功能信号连接（从CtrlBar连接到VideoCtl）
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterBrightness, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterBrightness);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterContrast, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterContrast);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSaturation, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSaturation);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterBlur, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterBlur);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterGrayscale, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterGrayscale);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterEdgeDetect, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterEdgeDetect);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterHorizontalFlip, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterHorizontalFlip);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterVerticalFlip, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterVerticalFlip);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSepia, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSepia);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterNegative, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterNegative);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSetFilterSharpen, VideoCtl::GetInstance(), &VideoCtl::OnSetFilterSharpen);
-    connect(ui->CtrlBarWid, &CtrlBar::SigResetFilter, VideoCtl::GetInstance(), &VideoCtl::OnResetFilter);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterBrightness, VideoCtl::GetInstance(), &VideoCtl::onSetFilterBrightness);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterContrast, VideoCtl::GetInstance(), &VideoCtl::onSetFilterContrast);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterSaturation, VideoCtl::GetInstance(), &VideoCtl::onSetFilterSaturation);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterBlur, VideoCtl::GetInstance(), &VideoCtl::onSetFilterBlur);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterGrayscale, VideoCtl::GetInstance(), &VideoCtl::onSetFilterGrayscale);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterEdgeDetect, VideoCtl::GetInstance(), &VideoCtl::onSetFilterEdgeDetect);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterHorizontalFlip, VideoCtl::GetInstance(), &VideoCtl::onSetFilterHorizontalFlip);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterVerticalFlip, VideoCtl::GetInstance(), &VideoCtl::onSetFilterVerticalFlip);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterSepia, VideoCtl::GetInstance(), &VideoCtl::onSetFilterSepia);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterNegative, VideoCtl::GetInstance(), &VideoCtl::onSetFilterNegative);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSetFilterSharpen, VideoCtl::GetInstance(), &VideoCtl::onSetFilterSharpen);
+    connect(ui->ctrlBarWid, &CtrlBar::sigResetFilter, VideoCtl::GetInstance(), &VideoCtl::onResetFilter);
     
     // 快捷键操作后显示 Toast（通过 VideoCtl 的状态信号）
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekForwardCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekForward);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigSeekBackCompleted, ui->CtrlBarWid, &CtrlBar::OnSeekBack);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigSeekForwardCompleted, ui->ctrlBarWid, &CtrlBar::onSeekForward);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigSeekBackCompleted, ui->ctrlBarWid, &CtrlBar::onSeekBack);
 
 //    状态控制栏的按钮功能
-    connect(ui->CtrlBarWid, &CtrlBar::SigPlayListCtlBtnClicked, this, &MainWindow::SlotOnPlayListCtrlBtnClicked);
-    connect(ui->CtrlBarWid, &CtrlBar::SigBackBtnClicked, &m_playlist, &Playlist::SlotOnBackPlay);
-    connect(ui->CtrlBarWid, &CtrlBar::SigNextBtnClicked, &m_playlist, &Playlist::SlotOnNextPlay);
-    connect(ui->CtrlBarWid, &CtrlBar::SigSpeedChanged, VideoCtl::GetInstance(), &VideoCtl::OnSetSpeed);
-    connect(ui->CtrlBarWid, &CtrlBar::SigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::OnPause);
-    connect(ui->CtrlBarWid, &CtrlBar::SigStop, VideoCtl::GetInstance(), &VideoCtl::OnUserStop);
-    connect(ui->CtrlBarWid, &CtrlBar::SigPlayVolume, VideoCtl::GetInstance(), &VideoCtl::OnPlayVolume);
-    connect(ui->CtrlBarWid, &CtrlBar::SigPlaySeek, VideoCtl::GetInstance(), &VideoCtl::OnPlaySeek);
-    connect(ui->CtrlBarWid, &CtrlBar::SigShowToast, ui->ShowWid, &Show::ShowToast);
+    connect(ui->ctrlBarWid, &CtrlBar::sigPlayListCtlBtnClicked, this, &MainWindow::onPlayListCtrlBtnClicked);
+    connect(ui->ctrlBarWid, &CtrlBar::sigBackBtnClicked, &m_playlist, &Playlist::onBackPlay);
+    connect(ui->ctrlBarWid, &CtrlBar::sigNextBtnClicked, &m_playlist, &Playlist::onNextPlay);
+    connect(ui->ctrlBarWid, &CtrlBar::sigSpeedChanged, VideoCtl::GetInstance(), &VideoCtl::onSetSpeed);
+    connect(ui->ctrlBarWid, &CtrlBar::sigPlayOrPause, VideoCtl::GetInstance(), &VideoCtl::onPause);
+    connect(ui->ctrlBarWid, &CtrlBar::sigStop, VideoCtl::GetInstance(), &VideoCtl::onUserStop);
+    connect(ui->ctrlBarWid, &CtrlBar::sigPlayVolume, VideoCtl::GetInstance(), &VideoCtl::onPlayVolume);
+    connect(ui->ctrlBarWid, &CtrlBar::sigPlaySeek, VideoCtl::GetInstance(), &VideoCtl::onPlaySeek);
+    connect(ui->ctrlBarWid, &CtrlBar::sigShowToast, ui->showWid, &Show::showToast);
 
     /*
      * 视频播放时，界面相关变化通知
@@ -177,38 +177,38 @@ void MainWindow::connectSignalSlots()
      * 使用 QueuedConnection 是因为双方不在同一个线程，防止出现数据竞争或者崩溃，故直接丢给将当前方法丢给接受者线程执行。相当于观察者模式，在 receiver 线程执行 sender.signal，执行完成后 notify 当前线程执行 slot 方法
      *
      */
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigStartPlay, &m_title, &Title::SlotOnPlay, Qt::DirectConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigStartPlay, ui->ShowWid, &Show::OnStartPlay, Qt::DirectConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigSpeed, ui->CtrlBarWid, &CtrlBar::OnSpeed);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigPauseStat, ui->CtrlBarWid, &CtrlBar::OnPauseStat, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, &CtrlBar::OnStopFinished, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigUserStopFinished, ui->CtrlBarWid, &CtrlBar::OnUserStopFinished, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigUserStopFinished, &m_title, &Title::SlotOnStop, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoTotalSeconds, ui->CtrlBarWid, &CtrlBar::OnVideoTotalSeconds, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoPlaySeconds, ui->CtrlBarWid, &CtrlBar::OnVideoPlaySeconds, Qt::QueuedConnection);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigVideoVolume, ui->CtrlBarWid, &CtrlBar::OnVolumeChanged);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigFrameDimensionsChanged, ui->ShowWid, &Show::OnFrameDimensionsChanged, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigStartPlay, &m_title, &Title::onPlay, Qt::DirectConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigStartPlay, ui->showWid, &Show::onStartPlay, Qt::DirectConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigSpeed, ui->ctrlBarWid, &CtrlBar::onSpeed);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigPauseStat, ui->ctrlBarWid, &CtrlBar::onPauseStat, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigStopFinished, ui->ctrlBarWid, &CtrlBar::onStopFinished, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigUserStopFinished, ui->ctrlBarWid, &CtrlBar::onUserStopFinished, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigUserStopFinished, &m_title, &Title::onStop, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigVideoTotalSeconds, ui->ctrlBarWid, &CtrlBar::onVideoTotalSeconds, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigVideoPlaySeconds, ui->ctrlBarWid, &CtrlBar::onVideoPlaySeconds, Qt::QueuedConnection);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigVideoVolume, ui->ctrlBarWid, &CtrlBar::onVolumeChanged);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigFrameDimensionsChanged, ui->showWid, &Show::onFrameDimensionsChanged, Qt::QueuedConnection);
 
     // 音频模式切换
-    connect(ui->CtrlBarWid, &CtrlBar::SigAudioModeChanged, this, &MainWindow::SlotOnAudioModeChanged);
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigAudioModeChanged, ui->CtrlBarWid, &CtrlBar::OnAudioModeChanged, Qt::QueuedConnection);
+    connect(ui->ctrlBarWid, &CtrlBar::sigAudioModeChanged, this, &MainWindow::onAudioModeChanged);
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigAudioModeChanged, ui->ctrlBarWid, &CtrlBar::onAudioModeChanged, Qt::QueuedConnection);
     // 播放停止时重置音频模式按钮
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigStopFinished, ui->CtrlBarWid, [this]() { ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL); });
-    connect(VideoCtl::GetInstance(), &VideoCtl::SigUserStopFinished, ui->CtrlBarWid, [this]() { ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL); });
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigStopFinished, ui->ctrlBarWid, [this]() { ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL); });
+    connect(VideoCtl::GetInstance(), &VideoCtl::sigUserStopFinished, ui->ctrlBarWid, [this]() { ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL); });
 
     // AudioSeparator 信号
-    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationProgress, this, [this](int modelIndex, int percent) {
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::sigSeparationProgress, this, [this](int modelIndex, int percent) {
         if (m_separation_dialog) {
             m_separation_dialog->setProgress(modelIndex, percent);
         }
     });
-    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationStemsReady, this, [this](const QString &) {
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::sigSeparationStemsReady, this, [this](const QString &) {
         if (m_separation_dialog) {
             m_separation_dialog->setGeneratingAccompaniment();
         }
     });
-    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationCompleted, this, &MainWindow::SlotOnSeparationCompleted);
-    connect(AudioSeparator::GetInstance(), &AudioSeparator::SigSeparationFailed, this, [this](const QString &error) {
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::sigSeparationCompleted, this, &MainWindow::onSeparationCompleted);
+    connect(AudioSeparator::GetInstance(), &AudioSeparator::sigSeparationFailed, this, [this](const QString &error) {
         if (m_separation_dialog) {
             m_separation_dialog->setFailed(error);
         }
@@ -216,12 +216,12 @@ void MainWindow::connectSignalSlots()
 
 }
 
-void MainWindow::SlotOnMinBtnClicked()
+void MainWindow::onMinBtnClicked()
 {
     this->showMinimized();
 }
 
-void MainWindow::SlotOnMaxBtnClicked()
+void MainWindow::onMaxBtnClicked()
 {
     if(isMaximized()) {
         showNormal();
@@ -230,53 +230,53 @@ void MainWindow::SlotOnMaxBtnClicked()
     }
 }
 
-void MainWindow::SlotOnFullScreenBtnClicked()
+void MainWindow::onFullScreenBtnClicked()
 {
 //    如果当前是全屏状态
-    if(ui->ShowWid->isFullScreen()) {
+    if(ui->showWid->isFullScreen()) {
 //        需要先将当前窗口设置为子窗口，才能取消全屏
-        ui->ShowWid->setWindowFlags(Qt::SubWindow);
-        ui->ShowWid->showNormal();
+        ui->showWid->setWindowFlags(Qt::SubWindow);
+        ui->showWid->showNormal();
         // 退出全屏时显示 CtrlBar、PlaylistWid
-        ui->CtrlBarWid->show();
-        ui->PlaylistWid->show();
+        ui->ctrlBarWid->show();
+        ui->playlistWid->show();
         // 退出全屏时立即隐藏快捷键提示
-        ui->ShowWid->HideShortcutHint();
+        ui->showWid->hideShortcutHint();
         // 强制将焦点转移回主窗口
         this->activateWindow();
         //    让当前窗口获取焦点
         this->setFocus();
     } else {
         // 全屏前隐藏 CtrlBar、PlaylistWid，避免它留在旧位置被渲染到视频画面上
-        ui->CtrlBarWid->hide();
-        ui->PlaylistWid->hide();
+        ui->ctrlBarWid->hide();
+        ui->playlistWid->hide();
         //脱离父窗口后才能设置为全屏
-        ui->ShowWid->setWindowFlags(Qt::Window);
-        ui->ShowWid->showFullScreen();
+        ui->showWid->setWindowFlags(Qt::Window);
+        ui->showWid->showFullScreen();
         // 全屏后显示快捷键提示（居中显示）
-        ui->ShowWid->ShowShortcutHint(tr("按下 ESC/F11 即可退出全屏"));
+        ui->showWid->showShortcutHint(tr("按下 ESC/F11 即可退出全屏"));
         //    让show窗口获取焦点
-        ui->ShowWid->setFocus();
+        ui->showWid->setFocus();
     }
 }
 
-void MainWindow::SlotOnCloseBtnClicked()
+void MainWindow::onCloseBtnClicked()
 {
     this->close();
 }
 
-void MainWindow::SlotOnMenuBtnClicked()
+void MainWindow::onMenuBtnClicked()
 {
 //    在鼠标位置打开菜单
     m_menu.exec(cursor().pos());
 }
 
-void MainWindow::SlotOnPlayListCtrlBtnClicked()
+void MainWindow::onPlayListCtrlBtnClicked()
 {
-    if(ui->PlaylistWid->isHidden()) {
-        ui->PlaylistWid->show();
+    if(ui->playlistWid->isHidden()) {
+        ui->playlistWid->show();
     } else {
-        ui->PlaylistWid->hide();
+        ui->playlistWid->hide();
     }
 }
 
@@ -301,7 +301,7 @@ void MainWindow::initMenu()
     });
     connect(act_full_screen, &QAction::triggered, this, [this]() {
         qDebug() << "全屏/取消全屏 \t F11 被触发";
-        this->SlotOnFullScreenBtnClicked();
+        this->onFullScreenBtnClicked();
     });
 
     // 添加快捷键(由于QMenu没有焦点，故只能再次添加到当前窗口上)
@@ -318,7 +318,7 @@ void MainWindow::initMenu()
     act_seek_back->setShortcut(Qt::Key_Left);
     act_seek_back->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_seek_back, &QAction::triggered, this, [this]() {
-        emit SigSeekBack();
+        emit sigSeekBack();
     });
     this->addAction(act_seek_back);
 
@@ -326,7 +326,7 @@ void MainWindow::initMenu()
     act_seek_forward->setShortcut(Qt::Key_Right);
     act_seek_forward->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_seek_forward, &QAction::triggered, this, [this]() {
-        emit SigSeekForward();
+        emit sigSeekForward();
     });
     this->addAction(act_seek_forward);
 
@@ -334,7 +334,7 @@ void MainWindow::initMenu()
     act_add_volume->setShortcut(Qt::Key_Up);
     act_add_volume->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_add_volume, &QAction::triggered, this, [this]() {
-        emit SigAddVolume();
+        emit sigAddVolume();
     });
     this->addAction(act_add_volume);
 
@@ -342,7 +342,7 @@ void MainWindow::initMenu()
     act_sub_volume->setShortcut(Qt::Key_Down);
     act_sub_volume->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_sub_volume, &QAction::triggered, this, [this]() {
-        emit SigSubVolume();
+        emit sigSubVolume();
     });
     this->addAction(act_sub_volume);
 
@@ -350,7 +350,7 @@ void MainWindow::initMenu()
     act_play_or_pause->setShortcut(Qt::Key_Space);
     act_play_or_pause->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_play_or_pause, &QAction::triggered, this, [this]() {
-        emit SigPlayOrPause();
+        emit sigPlayOrPause();
     });
     this->addAction(act_play_or_pause);
 
@@ -358,7 +358,7 @@ void MainWindow::initMenu()
     act_step->setShortcut(Qt::Key_S);
     act_step->setShortcutContext(Qt::ApplicationShortcut);
     connect(act_step, &QAction::triggered, this, [this]() {
-        emit SigStep();
+        emit sigStep();
     });
     this->addAction(act_step);
 
@@ -369,26 +369,26 @@ void MainWindow::initMenu()
     this->addAction(act_full_screen);
 }
 
-void MainWindow::SlotOnAudioModeChanged(int mode)
+void MainWindow::onAudioModeChanged(int mode)
 {
     // 切换到原声模式
     if (mode == AUDIO_ORIGINAL) {
-        VideoCtl::GetInstance()->OnSwitchAudioMode(AUDIO_ORIGINAL);
+        VideoCtl::GetInstance()->onSwitchAudioMode(AUDIO_ORIGINAL);
         return;
     }
 
     // 检查是否有文件正在播放
-    QString currentFile = ui->ShowWid->getCurrentFile();
+    QString currentFile = ui->showWid->getCurrentFile();
     if (currentFile.isEmpty()) {
-        ui->ShowWid->ShowToast(tr("请先打开文件"));
-        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        ui->showWid->showToast(tr("请先打开文件"));
+        ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL);
         return;
     }
 
     // 检查 demucs 是否可用
     if (!AudioSeparator::GetInstance()->isDemucsAvailable()) {
         QMessageBox::warning(this, tr("环境检查"), tr("未检测到 demucs，请安装 Python 和 demucs"));
-        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL);
         return;
     }
 
@@ -397,10 +397,10 @@ void MainWindow::SlotOnAudioModeChanged(int mode)
         // 已缓存，直接切换
         QString stemPath = AudioSeparator::GetInstance()->getStemPath(currentFile, (AudioMode)mode);
         if (!stemPath.isEmpty() && QFile::exists(stemPath)) {
-            VideoCtl::GetInstance()->OnSwitchAudioMode(mode);
+            VideoCtl::GetInstance()->onSwitchAudioMode(mode);
         } else {
             QMessageBox::warning(this, tr("文件错误"), tr("缺少对应的 stem 文件"));
-            ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+            ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL);
         }
         return;
     }
@@ -408,7 +408,7 @@ void MainWindow::SlotOnAudioModeChanged(int mode)
     // 未缓存，需要启动分离
     if (AudioSeparator::GetInstance()->isSeparating()) {
         QMessageBox::information(this, tr("音频分离"), tr("已有分离任务正在进行，请稍候"));
-        ui->CtrlBarWid->OnAudioModeChanged(AUDIO_ORIGINAL);
+        ui->ctrlBarWid->onAudioModeChanged(AUDIO_ORIGINAL);
         return;
     }
 
@@ -419,7 +419,7 @@ void MainWindow::SlotOnAudioModeChanged(int mode)
     // 弹出分离进度对话框
     if (!m_separation_dialog) {
         m_separation_dialog = new SeparationProgressDialog(this);
-        connect(m_separation_dialog, &SeparationProgressDialog::SigCancelRequested, this, [this]() {
+        connect(m_separation_dialog, &SeparationProgressDialog::sigCancelRequested, this, [this]() {
             AudioSeparator::GetInstance()->cancelSeparation();
             m_separation_dialog->close();
             m_separation_dialog->deleteLater();
@@ -446,16 +446,16 @@ void MainWindow::SlotOnAudioModeChanged(int mode)
     m_separation_dialog->show();
 }
 
-void MainWindow::SlotOnSeparationCompleted(const QString &filePath)
+void MainWindow::onSeparationCompleted(const QString &filePath)
 {
-    QString currentFile = ui->ShowWid->getCurrentFile();
+    QString currentFile = ui->showWid->getCurrentFile();
     if (filePath != currentFile) {
         return; // 不是当前文件的分离结果，忽略
     }
 
     // 自动切换到待切换的模式
     if (m_pending_audio_mode != AUDIO_ORIGINAL) {
-        VideoCtl::GetInstance()->OnSwitchAudioMode(m_pending_audio_mode);
+        VideoCtl::GetInstance()->onSwitchAudioMode(m_pending_audio_mode);
         m_pending_audio_mode = AUDIO_ORIGINAL;
     }
 

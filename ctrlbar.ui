@@ -60,7 +60,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="CustomSlider" name="PlaySlider">
+       <widget class="CustomSlider" name="playSlider">
         <property name="maximum">
          <number>65536</number>
         </property>
@@ -94,7 +94,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QPushButton" name="VolumeBtn">
+          <widget class="QPushButton" name="volumeBtn">
            <property name="minimumSize">
             <size>
              <width>20</width>
@@ -113,7 +113,7 @@
           </widget>
          </item>
          <item>
-          <widget class="CustomSlider" name="VolumeSlider">
+          <widget class="CustomSlider" name="volumeSlider">
            <property name="minimumSize">
             <size>
              <width>80</width>
@@ -143,7 +143,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QPushButton" name="PlayOrPauseBtn">
+      <widget class="QPushButton" name="playOrPauseBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -162,7 +162,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="OverPlayBtn">
+      <widget class="QPushButton" name="overPlayBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -181,7 +181,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="BackBtn">
+      <widget class="QPushButton" name="backBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -200,7 +200,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="NextBtn">
+      <widget class="QPushButton" name="nextBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -219,7 +219,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="SpeedBtn">
+      <widget class="QPushButton" name="speedBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -238,7 +238,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="AudioModeBtn">
+      <widget class="QPushButton" name="audioModeBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -257,7 +257,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="FilterBtn">
+      <widget class="QPushButton" name="filterBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -276,7 +276,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QTimeEdit" name="VideoPlayTimeTimeEdit">
+      <widget class="QTimeEdit" name="videoPlayTimeEdit">
        <property name="maximumSize">
         <size>
          <width>70</width>
@@ -298,7 +298,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="TimeSplitLabel">
+      <widget class="QLabel" name="timeSplitLabel">
        <property name="maximumSize">
         <size>
          <width>8</width>
@@ -311,7 +311,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QTimeEdit" name="VideoTotalTimeTimeEdit">
+      <widget class="QTimeEdit" name="videoTotalTimeEdit">
        <property name="maximumSize">
         <size>
          <width>70</width>
@@ -343,7 +343,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="PlayListCtlBtn">
+      <widget class="QPushButton" name="playListCtlBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>
@@ -362,7 +362,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="SettingBtn">
+      <widget class="QPushButton" name="settingBtn">
        <property name="minimumSize">
         <size>
          <width>30</width>

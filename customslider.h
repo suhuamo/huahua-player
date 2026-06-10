@@ -15,9 +15,9 @@ protected:
     void mouseReleaseEvent(QMouseEvent *ev);
     void mouseMoveEvent(QMouseEvent *ev);
 signals:
-    void SigSliderValueChanged();   //处理鼠标点击事件
+    void sigSliderValueChanged();   //处理鼠标点击事件
 private:
-    bool _pressed; //是否按住按钮中
+    bool m_pressed; //是否按住按钮中
 };
 
 #endif // CUSTOMSLIDER_H

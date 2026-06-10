@@ -152,13 +152,13 @@ QString AudioSeparator::currentSeparatingFile() const
 void AudioSeparator::startSeparation(const QString &filePath)
 {
     if (m_separating) {
-        emit SigSeparationFailed(tr("已有分离任务正在进行"));
+        emit sigSeparationFailed(tr("已有分离任务正在进行"));
         return;
     }
 
     // 如果已经缓存了，直接返回
     if (isCached(filePath)) {
-        emit SigSeparationCompleted(filePath);
+        emit sigSeparationCompleted(filePath);
         return;
     }
 
@@ -187,9 +187,9 @@ void AudioSeparator::startSeparation(const QString &filePath)
 
     m_process = new QProcess(this);
     connect(m_process, &QProcess::readyReadStandardError,
-            this, &AudioSeparator::OnProcessReadyReadStandardError);
+            this, &AudioSeparator::onProcessReadyReadStandardError);
     connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this, &AudioSeparator::OnProcessFinished);
+            this, &AudioSeparator::onProcessFinished);
 
     qDebug() << "AudioSeparator: starting demucs with:" << pythonCmd << args.join(" ");
     m_process->start(pythonCmd, args);
@@ -198,11 +198,11 @@ void AudioSeparator::startSeparation(const QString &filePath)
         m_separating = false;
         delete m_process;
         m_process = nullptr;
-        emit SigSeparationFailed(tr("无法启动 demucs，请确认已安装 Python 和 demucs"));
+        emit sigSeparationFailed(tr("无法启动 demucs，请确认已安装 Python 和 demucs"));
         return;
     }
 
-    emit SigSeparationStarted();
+    emit sigSeparationStarted();
 }
 
 void AudioSeparator::cancelSeparation()
@@ -214,11 +214,11 @@ void AudioSeparator::cancelSeparation()
         m_process = nullptr;
         m_separating = false;
         m_current_file.clear();
-        emit SigSeparationCancelled();
+        emit sigSeparationCancelled();
     }
 }
 
-void AudioSeparator::OnProcessReadyReadStandardError()
+void AudioSeparator::onProcessReadyReadStandardError()
 {
     if (!m_process) return;
 
@@ -233,17 +233,17 @@ void AudioSeparator::OnProcessReadyReadStandardError()
         QRegularExpressionMatch match = it.next();
         int percent = match.captured(1).toInt();
 
-        // 检测新进度条：上次>=50% 且这次<上次→说明新进度条开始了
+        // 检测新进度条：上次>=50% 且 这次<上次→说明新进度条开始了
         if (m_last_percent >= 50 && percent < m_last_percent && m_model_index < 3) {
             m_model_index++;
         }
         m_last_percent = percent;
 
-        emit SigSeparationProgress(m_model_index, percent);
+        emit sigSeparationProgress(m_model_index, percent);
     }
 }
 
-void AudioSeparator::OnProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+void AudioSeparator::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
     QString filePath = m_current_file;
     m_separating = false;
@@ -255,12 +255,12 @@ void AudioSeparator::OnProcessFinished(int exitCode, QProcess::ExitStatus exitSt
     }
 
     if (exitStatus == QProcess::CrashExit) {
-        emit SigSeparationFailed(tr("demucs 进程异常终止"));
+        emit sigSeparationFailed(tr("demucs 进程异常终止"));
         return;
     }
 
     if (exitCode != 0) {
-        emit SigSeparationFailed(tr("demucs 分离失败，退出码: %1").arg(exitCode));
+        emit sigSeparationFailed(tr("demucs 分离失败，退出码: %1").arg(exitCode));
         return;
     }
 
@@ -294,12 +294,12 @@ void AudioSeparator::OnProcessFinished(int exitCode, QProcess::ExitStatus exitSt
     }
 
     // 通知 UI：stem 文件已就绪，即将生成伴奏
-    emit SigSeparationStemsReady(filePath);
+    emit sigSeparationStemsReady(filePath);
 
     // 生成伴奏文件（drums + bass + other 混合）
     generateAccompaniment(cacheSubDir);
 
-    emit SigSeparationCompleted(filePath);
+    emit sigSeparationCompleted(filePath);
 }
 
 bool AudioSeparator::generateAccompaniment(const QString &cacheSubDir)

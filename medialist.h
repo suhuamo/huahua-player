@@ -15,7 +15,7 @@ class MediaList: public QListWidget
 public:
     MediaList(QWidget *parent=nullptr);
     ~MediaList();
-    bool Init();
+    bool init();
 protected:
 //    右键时触发，用来显示菜单的
     void contextMenuEvent(QContextMenuEvent *);
@@ -24,12 +24,12 @@ private:
     void addFile();
     void removeFile();
 signals:
-    void SigAddFile(QString filePath);
+    void sigAddFile(QString filePath);
 private:
-    QMenu _menu;
-    QAction _act_add_file;
-    QAction _act_remove_file;
-    QAction _act_clear_list;
+    QMenu m_menu;
+    QAction m_act_add_file;
+    QAction m_act_remove_file;
+    QAction m_act_clear_list;
 };
 
 #endif // MEDIALIST_H

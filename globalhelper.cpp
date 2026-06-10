@@ -16,7 +16,7 @@ const QString PLAYER_CONFIG_FILENAME = "flower_player_config.ini";
 
 const QString APP_VERSION = "0.1.0";
 
-QString GlobalHelper::GetQssStr(QString strQssPath)
+QString GlobalHelper::getQssStr(QString strQssPath)
 {
     QString style;
     QFile qss(strQssPath);
@@ -29,7 +29,7 @@ QString GlobalHelper::GetQssStr(QString strQssPath)
     return style;
 }
 
-QString GlobalHelper::GetKeyName(int key)
+QString GlobalHelper::getKeyName(int key)
 {
     QString keyName;
     switch (key) {
@@ -84,7 +84,7 @@ QString GlobalHelper::GetKeyName(int key)
     return keyName;
 }
 
-void GlobalHelper::SetIcon(QPushButton *btn, int iconSize, QChar icon)
+void GlobalHelper::setIcon(QPushButton *btn, int iconSize, QChar icon)
 {
     QFont font;
     font.setFamily("FontAwesome");
@@ -93,21 +93,21 @@ void GlobalHelper::SetIcon(QPushButton *btn, int iconSize, QChar icon)
     btn->setText(icon);
 }
 
-void GlobalHelper::SavePlayVolume(double& volume)
+void GlobalHelper::savePlayVolume(double& volume)
 {
     QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
     QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
     settings.setValue("volume/size", volume);
 }
 
-void GlobalHelper::GetPlayVolume(double& volume)
+void GlobalHelper::getPlayVolume(double& volume)
 {
     QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
     QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
     volume = settings.value("volume/size", volume).toDouble();
 }
 
-void GlobalHelper::SavePlaylist(QStringList& playList)
+void GlobalHelper::savePlaylist(QStringList& playList)
 {
     QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
     QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);
@@ -124,7 +124,7 @@ void GlobalHelper::SavePlaylist(QStringList& playList)
     settings.endArray();
 }
 
-void GlobalHelper::GetPlaylist(QStringList& playList)
+void GlobalHelper::getPlaylist(QStringList& playList)
 {
     QString strPlayerConfigFileName = PLAYER_CONFIG_BASEDIR + QDir::separator() + PLAYER_CONFIG_FILENAME;
     QSettings settings(strPlayerConfigFileName, QSettings::IniFormat);

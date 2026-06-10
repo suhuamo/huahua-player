@@ -141,7 +141,7 @@ bool VideoCtl::init() {
     if (m_init)
         return true;
 
-    if (ConnectionSignalSlots() == false)
+    if (connectSignalSlots() == false)
     {
         return false;
     }
@@ -210,9 +210,9 @@ bool VideoCtl::initHwDevice() {
 }
 
 
-bool VideoCtl::ConnectionSignalSlots()
+bool VideoCtl::connectSignalSlots()
 {
-    connect(this, &VideoCtl::SigStop, &VideoCtl::OnStop);
+    connect(this, &VideoCtl::sigStop, &VideoCtl::onStop);
     return true;
 }
 
@@ -272,7 +272,7 @@ void VideoCtl::start_play(QString filename, WId play_wid) {
         m_play_loop_thread.join();
     }
 
-    emit SigStartPlay(filename);
+    emit sigStartPlay(filename);
 
     m_play_wid = play_wid;
     m_stop_emitted = false; // 重置停止标志
@@ -357,7 +357,7 @@ VideoState * VideoCtl::stream_open(const char *filename) {
     is->audio_volume = m_startup_volume;
 
 //    启动播放的时候需要更新下界面ui的播放状态
-    emit SigPauseStat(is->paused);
+    emit sigPauseStat(is->paused);
     is->av_sync_type = AV_SYNC_AUDIO_MASTER;
 
     is->read_tid = std::thread(&VideoCtl::read_thread, this, is);
@@ -503,7 +503,7 @@ void VideoCtl::read_thread(VideoState *is) {
 
     is->realtime = is_realtime(ic);
 
-    emit SigVideoTotalSeconds(ic->duration / AV_TIME_BASE);
+    emit sigVideoTotalSeconds(ic->duration / AV_TIME_BASE);
 
     // 如果有自己期望的视频流，那么这里就先尝试使用期望的视频流
     for (int i = 0; i < ic->nb_streams; i++) {
@@ -658,7 +658,7 @@ void VideoCtl::read_thread(VideoState *is) {
              */
             if (!m_stop_emitted) {
                 m_stop_emitted = true;
-                emit SigStop();
+                emit sigStop();
             }
             continue;
         }
@@ -891,7 +891,7 @@ void sdl_audio_callback(void *opaque, Uint8 *stream, int len) {
              * 所以我们这边要对给的数据进行倍数处理，处理结束后，音频倍数就
              */
             // 倍数是否发生了改变，如果发生了改变，那么 sonic 对象需要重新创建，因为 sonic 的倍数是固定的
-            if (videoCtl->get_playback_change()) {
+            if (videoCtl->getPlaybackChange()) {
                 // 如果有sonic对象，那么需要先销毁 sonic---因为这个是老的配置，现在需要给sonic新的配置
                 if (videoCtl->m_audio_speed_convert) {
                     sonicDestroyStream(videoCtl->m_audio_speed_convert);
@@ -899,25 +899,25 @@ void sdl_audio_callback(void *opaque, Uint8 *stream, int len) {
                 // 创建新sonic
                 videoCtl->m_audio_speed_convert = sonicCreateStream(videoCtl->get_target_frequency(), videoCtl->get_target_channels());
                 // 设置变速系数
-                sonicSetSpeed(videoCtl->m_audio_speed_convert, videoCtl->get_playback_rate());
+                sonicSetSpeed(videoCtl->m_audio_speed_convert, videoCtl->getPlaybackRate());
                 sonicSetPitch(videoCtl->m_audio_speed_convert, 1.0);
                 sonicSetRate(videoCtl->m_audio_speed_convert, 1.0);
                 // 标记倍数改变事件处理结束 -- sonic 对象重新创建结束
-                videoCtl->set_playback_change(false);
+                videoCtl->setPlaybackChange(false);
             }
             /*
              * mark: 如果 Sonic 对象为空且需要变速播放，则立即创建
              * 比如启动的播放的时候倍数就是非常规倍数，此时 is_normal_playback_rate 是 false，但是上面的 get_playback_change 是fasle，并没有创建 sonic 对象，所以我们可以拦截到这种异常情况
              * 或者切换音频流的时候，情况和上面是一样的
              */
-            if (!videoCtl->is_normal_playback_rate() && !videoCtl->m_audio_speed_convert) {
+            if (!videoCtl->isNormalPlaybackRate() && !videoCtl->m_audio_speed_convert) {
                 videoCtl->m_audio_speed_convert = sonicCreateStream(videoCtl->get_target_frequency(), videoCtl->get_target_channels());
-                sonicSetSpeed(videoCtl->m_audio_speed_convert, videoCtl->get_playback_rate());
+                sonicSetSpeed(videoCtl->m_audio_speed_convert, videoCtl->getPlaybackRate());
                 sonicSetPitch(videoCtl->m_audio_speed_convert, 1.0);
                 sonicSetRate(videoCtl->m_audio_speed_convert, 1.0);
             }
             // 是否需要做倍数处理，如果倍数不是1倍，且有音频数据，那么使用sonic对 audio_buf 进行转换得到倍数后的新音频数据
-            if (!videoCtl->is_normal_playback_rate() && is->audio_buf) {
+            if (!videoCtl->isNormalPlaybackRate() && is->audio_buf) {
                 // 计算 swr_convert 实际返回了多少个样本
                 int actual_out_samples = is->audio_buf_size / (is->audio_tgt.channels * av_get_bytes_per_sample(is->audio_tgt.fmt));
 
@@ -998,7 +998,7 @@ void sdl_audio_callback(void *opaque, Uint8 *stream, int len) {
         * 2x时，缓冲区0.05s实时 = 0.1s媒体时间，所以当前听到的是 audio_clock - 0.1
         */
         // todo: audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec 公式为什么就是 pts了
-        videoCtl->set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec * videoCtl->get_playback_rate(),
+        videoCtl->set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec * videoCtl->getPlaybackRate(),
         is->audio_clock_serial, g_audio_callback_time / 1000000.0);
     }
     // av_log_info("callback video_clk=%f, audio_clk=%f, pts=%f, is->audio_clock=%f, sdl_buf = %f, bytes_per_sec=%d\n", videoCtl->get_clock(&is->vidclk), videoCtl->get_clock(&is->audclk),is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec, is->audio_clock, (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size), is->audio_tgt.bytes_per_sec);
@@ -1699,9 +1699,9 @@ void VideoCtl::do_exit(VideoState *is) {
     // 这里不销毁窗口，因为窗口我们需要一直渲染
     m_video_open = false; // 标记视频窗口已关闭--其实是播放状态的关闭，窗口实际还在使用
     if (m_user_stop) {
-        emit SigUserStopFinished();
+        emit sigUserStopFinished();
     } else {
-        emit SigStopFinished();
+        emit sigStopFinished();
     }
 }
 
@@ -1731,7 +1731,7 @@ void VideoCtl::stream_close(VideoState *is) {
     av_free(is);
 
     // 关闭 stem 资源
-    CloseStemSource();
+    closeStemSource();
 }
 
 void VideoCtl::stream_component_close(VideoState *is, int stream_index) {
@@ -2048,7 +2048,7 @@ display:
         // 信号节流：只在秒数变化时发射信号，避免高频发射导致事件队列堆积
         if (current_seconds != m_last_emitted_seconds) {
             m_last_emitted_seconds = current_seconds;
-            emit SigVideoPlaySeconds(current_seconds);
+            emit sigVideoPlaySeconds(current_seconds);
         }
     }
 }
@@ -2234,7 +2234,7 @@ void VideoCtl::video_image_display(VideoState *is) {
             m_frame_width = vp->frame->width;
             m_frame_height = vp->frame->height;
             qDebug() << "VideoCtl::video_image_display - emitting SigFrameDimensionsChanged" << m_frame_width << m_frame_height;
-            emit SigFrameDimensionsChanged(m_frame_width, m_frame_height);
+            emit sigFrameDimensionsChanged(m_frame_width, m_frame_height);
         }
     }
     /*mark：无论你图片有多大，我 rect 设置了多大，最后图片显示就是多大，即最后 SDL_RenderCopyEx 会帮我们做等比例缩放处理 */
@@ -2345,15 +2345,15 @@ int VideoCtl::stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue
              queue->nb_packets > MIN_FRAMES && (!queue->duration || av_q2d(st->time_base) * queue->duration > 1.0);
 }
 
-bool VideoCtl::get_playback_change() {
+bool VideoCtl::getPlaybackChange() {
     return m_playback_changed;
 }
 
-void VideoCtl::set_playback_change(bool change) {
+void VideoCtl::setPlaybackChange(bool change) {
     m_playback_changed = change;
 }
 
-float VideoCtl::get_playback_rate() {
+float VideoCtl::getPlaybackRate() {
     return m_playback_rate;
 }
 
@@ -2371,7 +2371,7 @@ int VideoCtl::get_target_channels() {
     return NORMAL_CHANNELS;
 }
 
-bool VideoCtl::is_normal_playback_rate() {
+bool VideoCtl::isNormalPlaybackRate() {
     // 在 0.99 ~ 1.01 之间，那么就是正常播放速度，因为我们用的 float，它不一定计算出来刚好就是1，后面可能会有浮点数误差，所以这里加个范围判断
     if (m_playback_rate > 0.99 && m_playback_rate < 1.01) {
         return true;
@@ -2380,7 +2380,7 @@ bool VideoCtl::is_normal_playback_rate() {
     }
 }
 
-void VideoCtl::OnSetSpeed(float speed)
+void VideoCtl::onSetSpeed(float speed)
 {
     if (speed < PLAYBACK_RATE_MIN || speed > PLAYBACK_RATE_MAX) {
         return;
@@ -2388,7 +2388,7 @@ void VideoCtl::OnSetSpeed(float speed)
     update_speed(speed);
 }
 
-void VideoCtl::OnPause()
+void VideoCtl::onPause()
 {
     if (m_cur_stream == nullptr) {
         // 如果现在在非播放状态，那么暂停/恢复播放按钮就变成了开启播放视频功能了【播放当前播放结束的视频】
@@ -2398,10 +2398,10 @@ void VideoCtl::OnPause()
         return;
     }
     toggle_pause(m_cur_stream);
-    emit SigPauseStat(m_cur_stream->paused);
+    emit sigPauseStat(m_cur_stream->paused);
 }
 
-void VideoCtl::OnStop()
+void VideoCtl::onStop()
 {
     qDebug() << "play stop";
     m_play_loop = false;
@@ -2412,14 +2412,14 @@ void VideoCtl::OnStop()
     m_audio_mode = AUDIO_ORIGINAL;
 }
 
-void VideoCtl::OnUserStop()
+void VideoCtl::onUserStop()
 {
     qDebug() << "user stop";
     m_user_stop = true; // 标记用户主动停止
-    OnStop();
+    onStop();
 }
 
-void VideoCtl::OnPlayVolume(double percent)
+void VideoCtl::onPlayVolume(double percent)
 {
     m_startup_volume = percent * SDL_MIX_MAXVOLUME;
     if(m_cur_stream == nullptr) {
@@ -2428,7 +2428,7 @@ void VideoCtl::OnPlayVolume(double percent)
     m_cur_stream->audio_volume = m_startup_volume;
 }
 
-void VideoCtl::OnPlaySeek(double percent)
+void VideoCtl::onPlaySeek(double percent)
 {
     if(m_cur_stream == nullptr) {
         return;
@@ -2441,7 +2441,7 @@ void VideoCtl::OnPlaySeek(double percent)
     stream_seek(m_cur_stream, ts, 0);
 }
 
-void VideoCtl::OnSeekForward()
+void VideoCtl::onSeekForward()
 {
     if (m_cur_stream == nullptr)
     {
@@ -2453,10 +2453,10 @@ void VideoCtl::OnSeekForward()
     stream_seek_forward();
 
     // 发出快进完成信号
-    emit SigSeekForwardCompleted(target_seconds);
+    emit sigSeekForwardCompleted(target_seconds);
 }
 
-void VideoCtl::OnSeekBack()
+void VideoCtl::onSeekBack()
 {
     if (m_cur_stream == nullptr)
     {
@@ -2469,10 +2469,10 @@ void VideoCtl::OnSeekBack()
     stream_seek_back();
 
     // 发出快退完成信号
-    emit SigSeekBackCompleted(target_seconds);
+    emit sigSeekBackCompleted(target_seconds);
 }
 
-void VideoCtl::OnAddVolume()
+void VideoCtl::onAddVolume()
 {
     if (m_cur_stream == nullptr)
     {
@@ -2481,7 +2481,7 @@ void VideoCtl::OnAddVolume()
     add_volume();
 }
 
-void VideoCtl::OnSubVolume()
+void VideoCtl::onSubVolume()
 {
     if (m_cur_stream == nullptr)
     {
@@ -2490,7 +2490,7 @@ void VideoCtl::OnSubVolume()
     sub_volume();
 }
 
-void VideoCtl::OnStep()
+void VideoCtl::onStep()
 {
     if (m_cur_stream == nullptr)
     {
@@ -2724,7 +2724,7 @@ void VideoCtl::update_volume(int sign, double step) {
     m_cur_stream->audio_volume = av_clip(m_cur_stream->audio_volume == new_volume ? (m_cur_stream->audio_volume + sign) : new_volume, 0, SDL_MIX_MAXVOLUME);
 
     m_startup_volume = m_cur_stream->audio_volume;
-    emit SigVideoVolume(m_cur_stream->audio_volume * 1.0 / SDL_MIX_MAXVOLUME);
+    emit sigVideoVolume(m_cur_stream->audio_volume * 1.0 / SDL_MIX_MAXVOLUME);
 }
 
 // 按照固定步长来增加音量
@@ -2747,12 +2747,12 @@ void VideoCtl::update_speed(float speed) {
         set_clock_speed(&m_cur_stream->vidclk, speed);
         set_clock_speed(&m_cur_stream->audclk, speed);
     }
-    emit SigSpeed(m_playback_rate);
+    emit sigSpeed(m_playback_rate);
 }
 
 // ==================== Stem 音频源相关方法 ====================
 
-void VideoCtl::OnSwitchAudioMode(int mode)
+void VideoCtl::onSwitchAudioMode(int mode)
 {
     AudioMode newMode = (AudioMode)mode;
 
@@ -2767,8 +2767,8 @@ void VideoCtl::OnSwitchAudioMode(int mode)
         // 等待一个短暂的缓冲周期，确保音频回调已切回原始源
         av_usleep(50000); // 50ms
         // 然后安全关闭 stem 资源
-        CloseStemSource();
-        emit SigAudioModeChanged(mode);
+        closeStemSource();
+        emit sigAudioModeChanged(mode);
         return;
     }
 
@@ -2788,11 +2788,11 @@ void VideoCtl::OnSwitchAudioMode(int mode)
         m_audio_mode = AUDIO_ORIGINAL;
         m_stem.active = false;
         av_usleep(50000); // 50ms，等待音频回调切回原始源
-        CloseStemSource();
+        closeStemSource();
     }
 
     // 打开新的 stem 源
-    if (OpenStemSource(stemPath)) {
+    if (openStemSource(stemPath)) {
         m_audio_mode = newMode;
         m_stem_file_path = stemPath;
 
@@ -2804,15 +2804,15 @@ void VideoCtl::OnSwitchAudioMode(int mode)
             }
         }
 
-        emit SigAudioModeChanged(mode);
+        emit sigAudioModeChanged(mode);
     } else {
         // 打开失败，切回原声并通知 UI
         m_audio_mode = AUDIO_ORIGINAL;
-        emit SigAudioModeChanged(AUDIO_ORIGINAL);
+        emit sigAudioModeChanged(AUDIO_ORIGINAL);
     }
 }
 
-bool VideoCtl::OpenStemSource(const QString &stemPath)
+bool VideoCtl::openStemSource(const QString &stemPath)
 {
     StemAudioSource &stem = m_stem;
     int ret;
@@ -2918,7 +2918,7 @@ bool VideoCtl::OpenStemSource(const QString &stemPath)
     return true;
 }
 
-void VideoCtl::CloseStemSource()
+void VideoCtl::closeStemSource()
 {
     StemAudioSource &stem = m_stem;
 
@@ -3076,7 +3076,7 @@ void VideoCtl::seekStemSource(int64_t pos)
 }
 
 // 设置视频滤镜参数
-void VideoCtl::SetVideoFilterParams(const FilterParams &params)
+void VideoCtl::setVideoFilterParams(const FilterParams &params)
 {
     m_filter_params = params;
     
@@ -3087,13 +3087,13 @@ void VideoCtl::SetVideoFilterParams(const FilterParams &params)
 }
 
 // 获取当前滤镜参数
-FilterParams VideoCtl::GetVideoFilterParams() const
+FilterParams VideoCtl::getVideoFilterParams() const
 {
     return m_filter_params;
 }
 
 // 重置视频滤镜
-void VideoCtl::ResetVideoFilter()
+void VideoCtl::resetVideoFilter()
 {
     m_filter_params.reset();
     
@@ -3104,74 +3104,74 @@ void VideoCtl::ResetVideoFilter()
 }
 
 // 滤镜槽函数实现
-void VideoCtl::OnSetFilterBrightness(double value)
+void VideoCtl::onSetFilterBrightness(double value)
 {
     m_filter_params.brightness = qBound(FilterConstants::MIN_BRIGHTNESS, m_filter_params.brightness + value, FilterConstants::MAX_BRIGHTNESS);
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterContrast(double value)
+void VideoCtl::onSetFilterContrast(double value)
 {
     m_filter_params.contrast = qBound(FilterConstants::MIN_CONTRAST, m_filter_params.contrast + value, FilterConstants::MAX_CONTRAST);
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterSaturation(double value)
+void VideoCtl::onSetFilterSaturation(double value)
 {
     m_filter_params.saturation = qBound(FilterConstants::MIN_SATURATION, m_filter_params.saturation + value, FilterConstants::MAX_SATURATION);
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterBlur(double value)
+void VideoCtl::onSetFilterBlur(double value)
 {
     m_filter_params.blur_radius = qBound(FilterConstants::MIN_BLUR_RADIUS, value, FilterConstants::MAX_BLUR_RADIUS);
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterGrayscale(bool enabled)
+void VideoCtl::onSetFilterGrayscale(bool enabled)
 {
     m_filter_params.grayscale = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterEdgeDetect(bool enabled)
+void VideoCtl::onSetFilterEdgeDetect(bool enabled)
 {
     m_filter_params.edge_detect = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterHorizontalFlip(bool enabled)
+void VideoCtl::onSetFilterHorizontalFlip(bool enabled)
 {
     m_filter_params.hflip = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterVerticalFlip(bool enabled)
+void VideoCtl::onSetFilterVerticalFlip(bool enabled)
 {
     m_filter_params.vflip = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterSepia(bool enabled)
+void VideoCtl::onSetFilterSepia(bool enabled)
 {
     m_filter_params.sepia = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterNegative(bool enabled)
+void VideoCtl::onSetFilterNegative(bool enabled)
 {
     m_filter_params.negative = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnSetFilterSharpen(bool enabled)
+void VideoCtl::onSetFilterSharpen(bool enabled)
 {
     m_filter_params.sharpen = enabled;
-    SetVideoFilterParams(m_filter_params);
+    setVideoFilterParams(m_filter_params);
 }
 
-void VideoCtl::OnResetFilter()
+void VideoCtl::onResetFilter()
 {
-    ResetVideoFilter();
+    resetVideoFilter();
 }
 

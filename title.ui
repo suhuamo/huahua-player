@@ -36,7 +36,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QPushButton" name="MenuBtn">
+    <widget class="QPushButton" name="menuBtn">
      <property name="minimumSize">
       <size>
        <width>130</width>
@@ -61,7 +61,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="MovieNameLab">
+    <widget class="QLabel" name="movieNameLab">
      <property name="minimumSize">
       <size>
        <width>0</width>
@@ -83,7 +83,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="MinBtn">
+    <widget class="QPushButton" name="minBtn">
      <property name="minimumSize">
       <size>
        <width>50</width>
@@ -102,7 +102,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="MaxBtn">
+    <widget class="QPushButton" name="maxBtn">
      <property name="minimumSize">
       <size>
        <width>50</width>
@@ -121,7 +121,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="FullScreenBtn">
+    <widget class="QPushButton" name="fullScreenBtn">
      <property name="minimumSize">
       <size>
        <width>50</width>
@@ -140,7 +140,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="CloseBtn">
+    <widget class="QPushButton" name="closeBtn">
      <property name="minimumSize">
       <size>
        <width>50</width>

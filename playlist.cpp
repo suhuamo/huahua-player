@@ -8,7 +8,7 @@
 Playlist::Playlist(QWidget *parent)
     : QWidget(parent),
     ui(new Ui::Playlist),
-    _current_play_list_index(0)
+    m_current_play_list_index(0)
 {
     ui->setupUi(this);
 }
@@ -16,39 +16,39 @@ Playlist::Playlist(QWidget *parent)
 Playlist::~Playlist()
 {
     QStringList strPlayList;
-    for(int i = 0; i < ui->List->count(); i++) {
-        strPlayList.append(ui->List->item(i)->toolTip());
+    for(int i = 0; i < ui->list->count(); i++) {
+        strPlayList.append(ui->list->item(i)->toolTip());
     }
-    GlobalHelper::SavePlaylist(strPlayList);
+    GlobalHelper::savePlaylist(strPlayList);
 
     delete ui;
 }
 
-bool Playlist::Init()
+bool Playlist::init()
 {
     if(initUi() == false) {
         return false;
     }
 
-    if(ui->List->Init() == false) {
+    if(ui->list->init() == false) {
         return false;
     }
 
     connectSignalSlots();
 
 //    清空播放列表，保证现在是干净的
-    ui->List->clear();
+    ui->list->clear();
 
     QStringList strPlayList;
 //    从本地缓存读取文件列表
-    GlobalHelper::GetPlaylist(strPlayList);
+    GlobalHelper::getPlaylist(strPlayList);
     for(QString videoFile : strPlayList) {
-        SlotOnAddFile(videoFile);
+        onAddFile(videoFile);
     }
 //    todo：应该默认选择上一次关闭前的播放文件才对吧
 //    默认选择第一个视频作为默认播放文件
     if(strPlayList.length() > 0) {
-        ui->List->setCurrentRow(0);
+        ui->list->setCurrentRow(0);
     }
 
 //    使得当前QT控制开启拖拽功能
@@ -60,18 +60,18 @@ bool Playlist::Init()
 bool Playlist::initUi()
 {
 //    加载qss样式
-    setStyleSheet(GlobalHelper::GetQssStr(":/res/qss/playlist.css"));
+    setStyleSheet(GlobalHelper::getQssStr(":/res/qss/playlist.css"));
 
     return true;
 }
 
 void Playlist::connectSignalSlots()
 {
-    connect(ui->List, &MediaList::SigAddFile, this, &Playlist::SlotOnAddFile);
-    connect(ui->List, &MediaList::itemDoubleClicked, this, &Playlist::SlotOnListItemDoubleClicked);
+    connect(ui->list, &MediaList::sigAddFile, this, &Playlist::onAddFile);
+    connect(ui->list, &MediaList::itemDoubleClicked, this, &Playlist::onListItemDoubleClicked);
 }
 
-void Playlist::SlotOnAddFile(QString filePath)
+void Playlist::onAddFile(QString filePath)
 {
     if(filePath.isEmpty()) {
         qDebug() << "filePath is empty";
@@ -90,8 +90,8 @@ void Playlist::SlotOnAddFile(QString filePath)
 
     //    查找该文件是否已经添加过 - 通过 UserRole 中的完整路径判断唯一性
     bool isExist = false;
-    for(int i = 0; i < ui->List->count(); i++) {
-        QListWidgetItem *item = ui->List->item(i);
+    for(int i = 0; i < ui->list->count(); i++) {
+        QListWidgetItem *item = ui->list->item(i);
         QString existingPath = item->data(Qt::UserRole).toString();
         if(existingPath == absolutePath) {
             isExist = true;
@@ -101,11 +101,11 @@ void Playlist::SlotOnAddFile(QString filePath)
 
     //    如果没有添加过，那么添加到播放列表中
     if(!isExist) {
-        QListWidgetItem *p_item = new QListWidgetItem(ui->List);
+        QListWidgetItem *p_item = new QListWidgetItem(ui->list);
         p_item->setData(Qt::UserRole, QVariant(absolutePath));
         p_item->setText(fileInfo.fileName());
         p_item->setToolTip(absolutePath);
-        ui->List->addItem(p_item);
+        ui->list->addItem(p_item);
     } else {
         QMessageBox::information(this, tr("重复添加"),
                                 tr("文件 \"%1\" 已经在播放列表中存在。").arg(fileInfo.fileName()));
@@ -113,51 +113,51 @@ void Playlist::SlotOnAddFile(QString filePath)
 
 }
 
-void Playlist::SlotOnListItemDoubleClicked(QListWidgetItem *item)
+void Playlist::onListItemDoubleClicked(QListWidgetItem *item)
 {
-    emit SigPlay(item->data(Qt::UserRole).toString());
+    emit sigPlay(item->data(Qt::UserRole).toString());
 
-    ui->List->setCurrentItem(item);
-    _current_play_list_index = ui->List->row(item);
+    ui->list->setCurrentItem(item);
+    m_current_play_list_index = ui->list->row(item);
 }
 
-void Playlist::SlotOnBackPlay()
+void Playlist::onBackPlay()
 {
     // 如果现在是第一个，还要回退，那么就变成最后一个
-    if(_current_play_list_index == 0) {
-        _current_play_list_index = ui->List->count() - 1;
+    if(m_current_play_list_index == 0) {
+        m_current_play_list_index = ui->list->count() - 1;
 //        发出信号通知其他组件
-        SlotOnListItemDoubleClicked(ui->List->item(_current_play_list_index));
+        onListItemDoubleClicked(ui->list->item(m_current_play_list_index));
 //        更新列表选择状态
-        ui->List->setCurrentRow(_current_play_list_index);
+        ui->list->setCurrentRow(m_current_play_list_index);
     } else {
-        _current_play_list_index--;
+        m_current_play_list_index--;
 //        发出信号通知其他组件
-        SlotOnListItemDoubleClicked(ui->List->item(_current_play_list_index));
+        onListItemDoubleClicked(ui->list->item(m_current_play_list_index));
 //        更新列表选择状态
-        ui->List->setCurrentRow(_current_play_list_index);
+        ui->list->setCurrentRow(m_current_play_list_index);
     }
 }
 
-void Playlist::SlotOnNextPlay()
+void Playlist::onNextPlay()
 {
     // 如果现在是最后一个，还要下一个，那么就变成第一个
-    if(_current_play_list_index == ui->List->count() - 1) {
-        _current_play_list_index = 0;
+    if(m_current_play_list_index == ui->list->count() - 1) {
+        m_current_play_list_index = 0;
 //        发出信号通知其他组件
-        SlotOnListItemDoubleClicked(ui->List->item(_current_play_list_index));
+        onListItemDoubleClicked(ui->list->item(m_current_play_list_index));
 //        更新列表选择状态
-        ui->List->setCurrentRow(_current_play_list_index);
+        ui->list->setCurrentRow(m_current_play_list_index);
     } else {
-        _current_play_list_index++;
+        m_current_play_list_index++;
 //        发出信号通知其他组件
-        SlotOnListItemDoubleClicked(ui->List->item(_current_play_list_index));
+        onListItemDoubleClicked(ui->list->item(m_current_play_list_index));
 //        更新列表选择状态
-        ui->List->setCurrentRow(_current_play_list_index);
+        ui->list->setCurrentRow(m_current_play_list_index);
     }
 }
 
-void Playlist::OnAddFileAndPlay(QString strFileName)
+void Playlist::onAddFileAndPlay(QString strFileName)
 {
     bool supportMovie = strFileName.endsWith(".mkv", Qt::CaseInsensitive) ||
         strFileName.endsWith(".rmvb", Qt::CaseInsensitive) ||
@@ -184,8 +184,8 @@ void Playlist::OnAddFileAndPlay(QString strFileName)
     //    查找该文件是否已经添加过 - 通过 UserRole 中的完整路径判断唯一性
     QListWidgetItem *pItem = nullptr;
     bool isExist = false;
-    for(int i = 0; i < ui->List->count(); i++) {
-        QListWidgetItem *item = ui->List->item(i);
+    for(int i = 0; i < ui->list->count(); i++) {
+        QListWidgetItem *item = ui->list->item(i);
         QString existingPath = item->data(Qt::UserRole).toString();
         if(existingPath == absolutePath) {
             pItem = item;
@@ -196,14 +196,14 @@ void Playlist::OnAddFileAndPlay(QString strFileName)
 
     //    如果没有添加过，那么添加到播放列表中
     if(!isExist) {
-        pItem = new QListWidgetItem(ui->List);
+        pItem = new QListWidgetItem(ui->list);
         pItem->setData(Qt::UserRole, QVariant(absolutePath));  // 用户数据
         pItem->setText(fileInfo.fileName());  // 显示文本
         pItem->setToolTip(absolutePath);
-        ui->List->addItem(pItem);
+        ui->list->addItem(pItem);
     }
 
-    SlotOnListItemDoubleClicked(pItem);
+    onListItemDoubleClicked(pItem);
 }
 
 void Playlist::dropEvent(QDropEvent *event)
@@ -214,7 +214,7 @@ void Playlist::dropEvent(QDropEvent *event)
     }
     for(QUrl url: urls) {
         QString strFileName = url.toLocalFile();
-        SlotOnAddFile(strFileName);
+        onAddFile(strFileName);
     }
 }
 

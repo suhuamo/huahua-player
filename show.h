@@ -20,43 +20,43 @@ class Show : public QWidget
 public:
     explicit Show(QWidget *parent = 0);
     ~Show();
-    bool Init();
-    void OnPlay(QString strFile);
-    void OnFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
-    void ShowToast(const QString &text);
-    void ShowShortcutHint(const QString &text); // 全屏快捷键提示（居中显示）
-    void HideShortcutHint(); // 强制隐藏快捷键提示
+    bool init();
+    void onPlay(QString strFile);
+    void onFrameDimensionsChanged(int nFrameWidth, int nFrameHeight);
+    void showToast(const QString &text);
+    void showShortcutHint(const QString &text); // 全屏快捷键提示（居中显示）
+    void hideShortcutHint(); // 强制隐藏快捷键提示
     QString getCurrentFile();
-    void OnStartPlay(QString filename);
+    void onStartPlay(QString filename);
 protected:
     void dropEvent(QDropEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
     void resizeEvent(QResizeEvent *event);
     void keyReleaseEvent(QKeyEvent *event); // 键盘事件处理
 private:
-    void ChangeShow();
+    void changeShow();
     bool initUi();
-    bool connectionSignalSlots();
+    bool connectSignalSlots();
 
 signals:
-    void SigPlay(QString strFile);
-    void SigOpenFile(QString strFile);
-    void SigExitFullScreen();
+    void sigPlay(QString strFile);
+    void sigOpenFile(QString strFile);
+    void sigExitFullScreen();
 private slots:
-    void OnToastTimeout();
-    void OnShortcutHintTimeout();
+    void onToastTimeout();
+    void onShortcutHintTimeout();
 private:
     Ui::Show *ui;
 
-    int m_nLastFrameWidth;
-    int m_nLastFrameHeight;
+    int m_last_frame_width;
+    int m_last_frame_height;
     QString m_current_file; // 当前播放的文件路径
     
-    QLabel *m_toastLabel;  // 提示标签（使用顶层窗口实现透明，右上角显示）
-    QTimer *m_toastTimer;  // 提示定时器
-    
-    QLabel *m_shortcutHintLabel;  // 快捷键提示标签（居中显示）
-    QTimer *m_shortcutHintTimer;  // 快捷键提示定时器
+    QLabel *m_toast_label;  // 提示标签（使用顶层窗口实现透明，右上角显示）
+    QTimer *m_toast_timer;  // 提示定时器
+
+    QLabel *m_shortcut_hint_label;  // 快捷键提示标签（居中显示）
+    QTimer *m_shortcut_hint_timer;  // 快捷键提示定时器
 };
 
 #endif // SHOW_H
